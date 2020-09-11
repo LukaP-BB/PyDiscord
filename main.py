@@ -58,6 +58,7 @@ async def cours(ctx, amount=1):
         amount = int(amount)
     except :
         await ctx.send("Cette commande s'utilise ainsi : `$cours <int>` avec 0<int<5")
+        return 1
     try :
         roles = [role.name for role in ctx.author.roles]
     except AttributeError:

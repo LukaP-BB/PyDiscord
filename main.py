@@ -54,8 +54,10 @@ async def zzz(ctx):
 
 @bot.command()
 async def cours(ctx, amount=1):
-    print(amount)
-    amount = int(amount)
+    try :
+        amount = int(amount)
+    except :
+        await ctx.send("Cette commande s'utilise ainsi : `$cours <int>` avec 0<int<5")
     try :
         roles = [role.name for role in ctx.author.roles]
     except AttributeError:

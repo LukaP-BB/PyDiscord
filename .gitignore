@@ -7,3 +7,5 @@ trashbin
 *.JPG
 *.pdf
 tok*
+*.txt
+*.json

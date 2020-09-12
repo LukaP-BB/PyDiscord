@@ -12,9 +12,11 @@ import subprocess       #même idée
 from chat import *
 import iCalParser as icp
 
+import anniv as anvs
+
 from discord.ext import commands
 
-bot = commands.Bot(command_prefix = '$') #création du préfixe qui servira à dire "ceci est une commande"
+bot = commands.Bot(command_prefix = '!') #création du préfixe qui servira à dire "ceci est une commande"
 
 #************ FERMETURE DU BOT *************************************************
 
@@ -30,13 +32,11 @@ async def quit(ctx):
 #-------- pour tuer les subprocess ---------------------------------------------
 @bot.command()
 async def kill(ctx):
-
     PanicBot.terminate()
-
     p4.terminate()
-
     child.terminate()
 
+#----------- commandes liées au calendrier -------------------------------------
 @bot.command()
 async def zzz(ctx):
     roles = [role.name for role in ctx.author.roles]
@@ -103,70 +103,45 @@ async def m(ctx, chan_id, content):
     else :
         await ctx.send("Fous moi la paix !")
 ############## ANNIVERSAIRES ###################################################
-d = datetime.date
+# d = datetime.date
 @bot.command()
-async def anniv(ctx):
-    #anniversaires à venir :
-    liste_anniversaires = {
-    345321795546775563 : d(2020, 10, 4), #romain
-    545906454087991297 : d(2020, 10, 9), #jerome
-    621624765211475979 : d(2020, 10, 9), #nicolas D
-    621612049843093525 : d(2020, 11, 20), #paul
-    274142551320297472 : d(2020, 12, 4), #florence
-    509447801315262474 : d(2020, 12, 13), #fabien
-    191953751131553793 : d(2021, 1, 21), #simon
-    291319580461236225 : d(2021, 1, 29), #erwan
-    264153089823604746 : d(2021, 2, 20), #Nicolas S
-    616364333391413279 : d(2021, 3, 5), #coralie
-    621989030900531200 : d(2021, 3, 5), #marie
-    530161764420288512 : d(2021, 3, 31), #anne-emeline
-    621656870356123648 : d(2021, 4, 27), #nathan
-    622085418921492483 : d(2021, 5, 10), #léa
-    249673860729929730 : d(2021, 5, 28), #alexis
-    568038541020495882 : d(2021, 6, 24), #sarah
-    621656884352516126 : d(2021, 7, 10), #louis
-    623591669085896730 : d(2021, 7, 11), #antoine
-    300603234597208065 : d(2021, 7, 15), #damien
-    623535494994853898 : d(2021, 7, 19), #nora
-    568855896525111307 : d(2021, 8, 14), #camille
-    621748334104805416 : d(2021, 8, 22), #lucie
-    573037185171980299 : d(2021, 9, 7), #marine
-    428257059146825728 : d(2021, 9, 7), #elisa R
-    }
-
+async def anniv(ctx, com="False", amount=1):
+    liste_anniversaires = anvs.loadAnnivs()
     today = datetime.date.today()
-    next = 0
-    list_next = []
-    jour_anniv = False
-    for key in liste_anniversaires :
-        user = bot.get_user(key)
-        # print(user)
-        if liste_anniversaires[key] == today :
-            jour_anniv = True
-            mess_anniv = [
-            f"Hey {user.mention}, bon anniversaire !!!",
-            f"Hey {user.mention}, bon anniversaire !!!",
-            f"Hey {user.mention}, peut-être que, pour le monde, tu n’es qu’une personne, mais pour des personnes tu es tout le monde, bon anniversaire !!!",
-            f"Hey {user.mention}, quelques bougies de plus sur le gâteau ne peuvent rien faire d’autre que d’éclairer davantage ton visage, bon anniversaire !!!",
-            f"Hey {user.mention}, ce ne sont pas des cheveux blancs. Ce sont les reflets de la sagesse, bon anniversaire !!!",
-            f"Hey {user.mention}, nos anniversaires sont des plumes dans l’aile large du temps.",
-            f"{user.mention} C'est l'anniversaire, dans tous les recoins. \nC'est presque tous les ans qu'on a l'anniversaire. \nGrâce à cet anni c'est la joie, c'est pratique. \nC'est au moins un principe à retenir pour faire la frite. \nCette année c'est bien, l'anniversaire tombe à pique!!",
-            f"{user.mention}, Joyeux anniversaire rime avec 'reprends du dessert'. Un hasard ? Je ne pense pas !!!",
-            f"{user.mention}, On ne peut pas cultiver son potager, mais à 80 ans on est un sacré pote âgé !!!",
-            f"Hey {user.mention}, noyeux janniversaire !!!",
-            f"Hey {user.mention}, bon anniversaire !!!",
-            ]
-            await ctx.send(mess_anniv[random.randint(0,(len(mess_anniv)-1))])
-        elif liste_anniversaires[key] > today and next < 2 :
-            next +=1
-            next_anniv = user
-            date = liste_anniversaires[key]
-            list_next.append((next_anniv, date))
-    # # print(list_next)
-    if not jour_anniv :
-        await ctx.send(f"Les prochains anniversaires enregistrés sont ceux de {list_next[0][0].display_name} le {list_next[0][1]} et {list_next[1][0].display_name} le {list_next[1][1]} !")
-    # print(next_anniv)
-    # # if next_anniv is None :
+    datesAnniv = [key for key in liste_anniversaires.values()]
+
+    if today in datesAnniv and com not in ["next", "help"]:
+        print("ON Y EST ARRIVE !!")
+        annivsToday = [key for key in liste_anniversaires if liste_anniversaires[key] == today ]
+        for key in annivsToday :
+            user = bot.get_user(key)
+            mess_anniv = anvs.sendRandMess(user)
+            await ctx.send(random.choice(mess_anniv))
+
+    elif com == "next" or com == "False" :
+        embed = discord.Embed(
+                title="Pas d'anniversaire aujourd'hui 😢",
+                colour = discord.Colour.magenta(),
+                description="Voici le(s) anniversaire(s) à venir : ")
+        annivsNext = [key for key in liste_anniversaires.keys() if liste_anniversaires[key] > today]
+        x = 0
+        while x < int(amount) and x < len(annivsNext)-1 :
+            try :
+                ID = annivsNext[x]
+                personneAgee = bot.get_user(ID)
+                embed.add_field(
+                    name=(personneAgee.display_name),
+                    value=(liste_anniversaires[ID].strftime('%d/%m')))
+            except :
+                print(f"La personne suivante n'est pas détectée : {ID}")
+            x += 1
+        await ctx.send(embed=embed)
+
+    elif com == "help" :
+        await ctx.send(
+"Utilises `$anniv` tel quel pour ping la personne dont c'est l'anniversaire\n\
+Utilises `$anniv next <nombre>` pour connaitre les anniversaires à venir"
+        )
 
 
 ################################################################################
@@ -353,11 +328,17 @@ async def clear(ctx, nb_messages : int):
     await ctx.channel.purge(limit=nb_messages+1)
 
 @clear.error
-async def clear_error():
+async def clear_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send("tu n'as pas les droits, loser !")
-    elif (isinstance(error, commands.MissingRequiredArgument)):
-        await ctx.send("Il faut mettre un nombre après $score")
+        await ctx.send("Tu n'as pas les droits, nameho !")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f"Il faut mettre un nombre après $clear")
+    else :
+        print(error)
+#     else :
+#         MYSELF = bot.get_user(404395089389944832)
+#         await MYSELF.send(f"Une erreur non anticipée est advenue : \n'{error}'\n\
+# Salon : {ctx.channel.name}")
 
 
 #************* UNE FONCTION POUR LIMITER LES DISTRACTIONS **********************
@@ -485,7 +466,7 @@ async def mess(ctx):
         message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nDes gens parlent plus, des gens parlent moins")
     elif nb_messages/somme > 1/60 :
         message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nQuelques efforts sont à fournir")
-    elif nb_messages/somme > 1/100 :
+    elif nb_messages/somme > 1/200 :
         message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nIl va falloir penser à se réveiller")
     else :
         message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nJe crois que je ne peux plus rien pour toi...")
@@ -616,13 +597,6 @@ async def jeux(ctx):
     p4 = subprocess.Popen("./p4.py")
 
 
-
-#gestion des conflits avec un autre bot
-@bot.command(hidden=True)
-async def panic(ctx):
-    await ctx.send("Utilises **panic* si tu souhaites connaitre ton niveau de panique")
-
-
 #************* GESTION GLOBALE DES ERREURS *************************************
 from discord.ext.commands import CommandNotFound
 @bot.event
@@ -631,7 +605,10 @@ async def on_command_error(ctx, error):
     if isinstance(error, CommandNotFound):
         await ctx.send("Cette commande n'existe pas")
     else:
-        #pass
+        MYSELF = bot.get_user(404395089389944832)
+        await MYSELF.send(f"Une erreur non anticipée est advenue : \n'{error}'\n\
+Serv : {ctx.guild.name}\n\
+Salon : {ctx.channel.mention}")
         print(error)
 
 #commande pour obtenir la latence du bot ***************************************
@@ -652,5 +629,5 @@ async def on_ready():
 #************ FIN ***********************FIN ***********************************
 
 with open('token.txt', 'r') as token :
-    t=token.read()
+    t = token.read()
     bot.run(t)

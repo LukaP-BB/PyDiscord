@@ -627,7 +627,7 @@ async def panic(ctx):
 from discord.ext.commands import CommandNotFound
 @bot.event
 async def on_command_error(ctx, error):
-    pass
+    # pass
     if isinstance(error, CommandNotFound):
         await ctx.send("Cette commande n'existe pas")
     else:
@@ -638,7 +638,7 @@ async def on_command_error(ctx, error):
 @bot.command()
 async def ping(ctx):
     await ctx.send(f"Pong !\nLatence : {round(bot.latency, 4)} secondes")
-    print(len(bot.emojis))
+    # print(len(bot.emojis))
     for _ in range(20) :
         await ctx.message.add_reaction(random.choice(bot.emojis))
 

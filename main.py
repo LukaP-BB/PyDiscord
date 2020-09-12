@@ -16,7 +16,7 @@ import anniv as anvs
 
 from discord.ext import commands
 
-bot = commands.Bot(command_prefix = '!') #création du préfixe qui servira à dire "ceci est une commande"
+bot = commands.Bot(command_prefix = '$') #création du préfixe qui servira à dire "ceci est une commande"
 
 #************ FERMETURE DU BOT *************************************************
 

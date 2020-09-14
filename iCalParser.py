@@ -57,11 +57,11 @@ def nextC(calendar, amount):
     while now > parseDate(calendar[i]["dtstart"]):
         i += 1
     for x in range(i, i+amount) :
-        d = parseDate(calendar[x]["dtstart"]).strftime("%d %B, %H:%M%p")
-        d2 = parseDate(calendar[x]["dtend"]).strftime("%H:%M%p")
+        d = parseDate(calendar[x]["dtstart"]).strftime("%H:%M%p")
+        d2 = parseDate(calendar[x]["dtend"]).strftime("%H:%M%p, %d %B")
         if calendar[x]['summary'] or calendar[x]['description'] :
             infos = {}
-            infos["date"] = f"{d} --> {d2}\n"
+            infos["date"] = f"{d} → {d2}"
             infos["summary"] = calendar[x]['summary'].replace('\\n', '\n').replace("\\", "")
             infos["description"] = calendar[x]['description'].replace('\\n', '\n').replace("\\", "")
             listOfEvents.append(infos)

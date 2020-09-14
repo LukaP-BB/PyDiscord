@@ -16,7 +16,7 @@ import anniv as anvs
 
 from discord.ext import commands
 
-bot = commands.Bot(command_prefix = '$') #création du préfixe qui servira à dire "ceci est une commande"
+bot = commands.Bot(command_prefix = '$') #création d'un instance de bot
 
 #************ FERMETURE DU BOT *************************************************
 
@@ -51,6 +51,20 @@ async def zzz(ctx):
     else :
         await ctx.send("T'es en cours là ? Mouais...")
 
+def formatTT(timetable, DT) :
+    regex = "Matière : (.*)\nPersonnel : (.*)\nGroupe : (.*)\nSalle : (.*)\nRemarques : (.*)"
+    match = re.search(regex, timetable)
+    formatStr = f"```md\n\
+<Heure : {DT}>\n\
+# Matière :  \n\
+{match.group(1)}\n\
+# Enseignant : \n\
+{match.group(2)}\n\
+# Groupe(s) : \n\
+{match.group(3)}\n\
+# Salle : \n\
+{match.group(4)}```"
+    return formatStr
 
 @bot.command()
 async def cours(ctx, amount=1):
@@ -70,7 +84,7 @@ async def cours(ctx, amount=1):
             calurl = "https://edt.univ-nantes.fr/sciences/g351268.ics"
             colour = discord.Colour.purple()
         elif "biostats" in roles :
-            await ctx.send("Viens plutôt boire un coup ;)")
+            await ctx.send("Viens plutôt boire un coup 😉")
             return 0
             # calurl = "https://edt.univ-nantes.fr/sciences/g351247.ic"
             # statut = "Biostats"
@@ -78,19 +92,23 @@ async def cours(ctx, amount=1):
             statut = "Bioinfos"
             calurl = "https://edt.univ-nantes.fr/sciences/g351247.ics"
             colour = discord.Colour.green()
-    if amount > 4 :
-        await ctx.send("A chaque jour suffit sa peine, pas plus de 4 cours OK ?")
+
+    if amount == 69 :
+        await ctx.send("Nice 😏")
+    elif amount == 42 :
+        await ctx.send("<:YouKnow:648164979245318144>")
+    elif amount == 420 :
+        await ctx.send("🌿")
+    elif amount > 3 :
+        await ctx.send("""```fix
+A chaque jour suffit sa peine, pas plus de 3 cours OK ? 😴
+```""")
     else :
+        fstr = f"> __**Cours à venir : **__\n> *Les cours suivants sont prévus pour les __{statut}__ :*\n"
         events = icp.searchTimetable(calurl, amount)
-        embed = discord.Embed(
-            title="Cours à venir",
-            colour=colour,
-            description=(f"Les cours suivants sont prévus pour les {statut}"))
         for event in events :
-            embed.add_field(
-                name=(event["date"]),
-                value=(f"{event['summary']}\n\n{event['description']}"))
-        await ctx.send(embed=embed)
+            fstr += formatTT(event['description'], event["date"])
+        await ctx.send(fstr)
 
 #-------- Envoi de messages 'intelligents' -------------------------------------
 @bot.command(hidden = True)
@@ -105,7 +123,7 @@ async def m(ctx, chan_id, content):
 ############## ANNIVERSAIRES ###################################################
 # d = datetime.date
 @bot.command()
-async def anniv(ctx, com="False", amount=1):
+async def anniv(ctx, com="False", amount=3):
     liste_anniversaires = anvs.loadAnnivs()
     today = datetime.date.today()
     datesAnniv = [key for key in liste_anniversaires.values()]

@@ -11,6 +11,7 @@ import os               #pour interragir avec le système, lancer des commandes 
 import subprocess       #même idée
 from chat import *
 import iCalParser as icp
+import coroPack.interface as itf
 
 import anniv as anvs
 
@@ -110,6 +111,41 @@ A chaque jour suffit sa peine, pas plus de 3 cours OK ? 😴
             fstr += formatTT(event['description'], event["date"])
         await ctx.send(fstr)
 
+
+################################################################################
+## COMMANDES CORO --------------------------------------------------------------
+@commands.cooldown(1, 5, commands.BucketType.guild)
+@bot.command()
+async def coro(ctx, *args):
+    args = itf.parseArgs(args)
+
+    if args["type"] == "help" :
+        await ctx.send(itf.help_message)
+
+    elif args["type"] == "dep" :
+        await ctx.message.author.send(itf.sendDeps())
+        await ctx.send(f"Je t'ai envoyé un DM {ctx.author.mention} :wink:")
+
+    elif args["type"] == "plot" :
+        async with ctx.channel.typing():
+            infos = itf.plotFromArgs(args)
+            file = discord.File("fig.jpg")
+            embed = discord.Embed(
+                title=infos["Titre"],
+                description=infos["Description"],
+                colour=discord.Colour.magenta())
+            embed.set_image(url="attachment://fig.jpg")
+            if len(infos["Erreurs"]) > 0 :
+                for info in infos["Erreurs"] :
+                    embed.add_field(name="Information : ", value=info)
+            await ctx.send(file=file, embed=embed)
+
+@coro.error
+async def coro_error(ctx, error):
+    if isinstance(error, commands.errors.CommandOnCooldown) :
+        await ctx.send(f"Minute papillon, laisses moi quelques secondes ! :rage: {ctx.author.mention}")
+
+
 #-------- Envoi de messages 'intelligents' -------------------------------------
 @bot.command(hidden = True)
 async def m(ctx, chan_id, content):
@@ -162,73 +198,6 @@ Utilises `$anniv next <nombre>` pour connaitre les anniversaires à venir"
         )
 
 
-################################################################################
-###############   CORO #########################################################
-import requests
-@bot.command()
-async def coro(ctx, arg1="France", arg2="recovered"):
-
-    if arg1 == "infos" :
-        await ctx.send("> Usage de la CoroCommande :\n\
-```$coro <Pays> <info_recherchée>```\n\
-> <Pays> doit être soit un nom de pays en anglais, soit 'global', et l'info recherchée peut se trouver dans cette liste :\n\
-> *[cases,todayCases,deaths,todayDeaths,recovered,critical]*\n\
-> Par défaut, et pour des raisons d'optimisme, le défaut est basé sur les personnes rétablies en France\n\
-*ps : je ne sais rien de la fiabilité du site dont je tire les infos, molo sur l'interprétation*")
-    elif arg1 == "global" :
-        web = requests.get("https://corona.lmao.ninja/all")
-        i = json.loads(web.text)
-        # print(liste)
-        # try :
-        nombre = i[arg2]
-
-        if arg2 == "cases" :
-            remplacement = "cas au total"
-        elif arg2 == "todayCases" :
-            remplacement = "cas aujourd'hui"
-        elif arg2 == "deaths" :
-            remplacement = "morts au total"
-        elif arg2 == "todayDeaths" :
-            remplacement = "morts aujourd'hui"
-        elif arg2 == "recovered" :
-            remplacement = "personnes rétablies"
-        elif arg2 == "critical" :
-            remplacement = "personnes en état critique"
-
-        phrase = f"A ce jour, il y a eu {nombre} {remplacement} dans le monde"
-        await ctx.send(phrase)
-        # except :
-        #     await ctx.send("Vérifie bien que tu as mis un nom de pays valide, `$coro infos` pour plus de détails")
-
-    else :
-        web = requests.get("https://corona.lmao.ninja/countries")
-        liste = json.loads(web.text)
-        # print(liste)
-        try :
-            for i in liste :
-                if i["country"] == arg1 :
-                    nombre = i[arg2]
-
-                    if arg2 == "cases" :
-                        remplacement = "cas au total"
-                    elif arg2 == "todayCases" :
-                        remplacement = "cas aujourd'hui"
-                    elif arg2 == "deaths" :
-                        remplacement = "morts au total"
-                    elif arg2 == "todayDeaths" :
-                        remplacement = "morts aujourd'hui"
-                    elif arg2 == "recovered" :
-                        remplacement = "personnes rétablies"
-                    elif arg2 == "critical" :
-                        remplacement = "personnes en état critique"
-
-                    phrase = f"Il y a eu {nombre} {remplacement} dans ce pays : {arg1}"
-                    await ctx.send(phrase)
-        except :
-            await ctx.send("Vérifie bien que tu as mis un nom de pays valide, `$coro infos` pour plus de détails")
-################################################################################
-
-
 #************* JEU DE HASARD ***************************************************
 
 @bot.command(help="Un petit jeu pour tuer le temps : il faut taper $score suivi d'un guess entre 0 et 100. Le bot trouve un nombre mystère aléatoire et fait la différence avec ton guess. Plus celle-ci est petite, plus tu es lucky")                           #commande $score : permet de faire un guess et d'obtenir la différence avec ce guess
@@ -255,7 +224,7 @@ async def score(ctx, guess):
 async def score_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Il faut mettre un nombre après $score")
-    elif(error, commands.CommandInvokeError):
+    elif isinstance(error, commands.CommandInvokeError):
         await ctx.send("$score n'accepte pas les chaines de caractères :rage:")
     else:
         await ctx.send("erreur")

@@ -37,6 +37,13 @@ async def kill(ctx):
     p4.terminate()
     child.terminate()
 
+
+@bot.command()
+async def lulu(ctx):
+    """Pour faire plaisir à Nico"""
+    auteur = ctx.message.author.mention
+    await ctx.send(f"Laisses Lucie tranquille {auteur}")
+
 #----------- commandes liées au calendrier -------------------------------------
 @bot.command()
 async def zzz(ctx):
@@ -51,21 +58,6 @@ async def zzz(ctx):
         await ctx.send(f"Il te reste {time} minutes à souffrir, tiens bon")
     else :
         await ctx.send("T'es en cours là ? Mouais...")
-
-def formatTT(timetable, DT) :
-    regex = "Matière : (.*)\nPersonnel : (.*)\nGroupe : (.*)\nSalle : (.*)\nRemarques : (.*)"
-    match = re.search(regex, timetable)
-    formatStr = f"```md\n\
-<Heure : {DT}>\n\
-# Matière :  \n\
-{match.group(1)}\n\
-# Enseignant : \n\
-{match.group(2)}\n\
-# Groupe(s) : \n\
-{match.group(3)}\n\
-# Salle : \n\
-{match.group(4)}```"
-    return formatStr
 
 @bot.command()
 async def cours(ctx, amount=1):
@@ -85,21 +77,23 @@ async def cours(ctx, amount=1):
             calurl = "https://edt.univ-nantes.fr/sciences/g351268.ics"
             colour = discord.Colour.purple()
         elif "biostats" in roles :
-            await ctx.send("Viens plutôt boire un coup 😉")
-            return 0
-            # calurl = "https://edt.univ-nantes.fr/sciences/g351247.ic"
-            # statut = "Biostats"
+            calurl = "https://edt.univ-nantes.fr/medecine/g497301.ics"
+            statut = "Biostats"
+            colour = discord.Colour.red()
         else :
             statut = "Bioinfos"
             calurl = "https://edt.univ-nantes.fr/sciences/g351247.ics"
             colour = discord.Colour.green()
 
+    # useless and childish easter eggs
     if amount == 69 :
         await ctx.send("Nice 😏")
     elif amount == 42 :
         await ctx.send("<:YouKnow:648164979245318144>")
     elif amount == 420 :
         await ctx.send("🌿")
+
+    # and useful stuff
     elif amount > 3 :
         await ctx.send("""```fix
 A chaque jour suffit sa peine, pas plus de 3 cours OK ? 😴
@@ -107,9 +101,12 @@ A chaque jour suffit sa peine, pas plus de 3 cours OK ? 😴
     else :
         fstr = f"> __**Cours à venir : **__\n> *Les cours suivants sont prévus pour les __{statut}__ :*\n"
         events = icp.searchTimetable(calurl, amount)
-        for event in events :
-            fstr += formatTT(event['description'], event["date"])
-        await ctx.send(fstr)
+        try :
+            for event in events :
+                fstr += icp.formatTT(event['description'], event["date"])
+            await ctx.send(fstr)
+        except AttributeError:
+            await ctx.send(f"Aucun cours n'a été trouvé pour les __{statut}__, tanquille la vie ?")
 
 
 ################################################################################
@@ -165,7 +162,6 @@ async def anniv(ctx, com="False", amount=3):
     datesAnniv = [key for key in liste_anniversaires.values()]
 
     if today in datesAnniv and com not in ["next", "help"]:
-        print("ON Y EST ARRIVE !!")
         annivsToday = [key for key in liste_anniversaires if liste_anniversaires[key] == today ]
         for key in annivsToday :
             user = bot.get_user(key)
@@ -173,8 +169,12 @@ async def anniv(ctx, com="False", amount=3):
             await ctx.send(random.choice(mess_anniv))
 
     elif com == "next" or com == "False" :
+        if com == "next" :
+            title = "<:youpicquet:685075741259595781>"
+        else :
+            title = "Pas d'anniversaire aujourd'hui 😢"
         embed = discord.Embed(
-                title="Pas d'anniversaire aujourd'hui 😢",
+                title=title,
                 colour = discord.Colour.magenta(),
                 description="Voici le(s) anniversaire(s) à venir : ")
         annivsNext = [key for key in liste_anniversaires.keys() if liste_anniversaires[key] > today]
@@ -205,15 +205,12 @@ async def score(ctx, guess):
 
     random.seed()                           #initialise la seed et
     score = random.randint(0,100)           #renvoie un nb pseudo aléatoire dans l'intervalle [0;100]
+    delta = abs(score-int(guess))  # 2 lignes pour calculer la différence absolue entre le guess et le score obtenu (abs vient de la bibliothèque math)
 
-    guess = int(guess)
-    delta = abs(score-guess)  # 2 lignes pour calculer la différence absolue entre le guess et le score obtenu (abs vient de la bibliothèque math)
+    await ctx.send(f'nombre mystère : {resultats}\ndifférence : {delta}')
 
-    await ctx.send('nombre mystère : {}'.format(score)) #renvoie le résultat en msg discord
-    await ctx.send('différence : {}'.format(delta))     #renvoie la différence
 
-    from datetime import date
-    today = date.today()       #2 lignes pour écrire la date d'obtention du score
+    today = datetime.date.today()       #2 lignes pour écrire la date d'obtention du score
 
     resultats = open("resultats.txt","a")   #ouvre le fichier resultats.txt en mode "append" : chaque écriture se fait à la suite de ce qui est déjà écrit
     resultats.writelines([str(ctx.message.author), " : " ,str(delta), " : ", str(today),"\n"]) #ecrit le nom d'utilisateur, le score et la date dans chaque nouvelle ligne du .txt
@@ -230,26 +227,27 @@ async def score_error(ctx, error):
         await ctx.send("erreur")
 
 # COMMANDE BEST
-@bot.command(help="Cette commande renvoie le nom d'utilisateur ayant eu le meilleur delta par rapport à son guess.\nLes résultats sont rentrés dans un fichier quand $score est appelé, et cette commande lit le fichier qui en résulte.")
+@bot.command(help="Cette commande renvoie le nom d'utilisateur ayant eu le meilleur delta par rapport à son guess.\n\
+Les résultats sont rentrés dans un fichier quand $score est appelé, et cette commande lit le fichier qui en résulte.")
 #commande pour extraire celui ayant le meilleur guess, accompagné de la date
 async def best(ctx):
-    resultats = open("resultats.txt", "r")
-    min = 101
-    for i, line in enumerate(resultats):
-        match = re.search('(: )(\d?\d)( :)', line) #chaque expression entre parenthèse correspond à un groupe
-        if match:
-            score_obtenu = match.group(2)          #le group(2) fait référence aux deuxièmes parenthèses du match
-            score_obtenu = int(score_obtenu)
-            if (score_obtenu < min):
-                min = score_obtenu
-                match = re.search('[^0-9^#]*', line)
-                if match:
-                    nom = match.group(0)
-                match = re.search('\d{4}-\d{2}-\d{2}', line)
-                if match:
-                    date = match.group(0)
-        else:
-            print("il n'y a pas encore de résultat")
+    with open("resultats.txt", "r") as resultats :
+        min = 101
+        for line in resultats:
+            match = re.search('(: )(\d?\d)( :)', line) #chaque expression entre parenthèse correspond à un groupe
+            if match:
+                score_obtenu = match.group(2)          #le group(2) fait référence aux deuxièmes parenthèses du match
+                score_obtenu = int(score_obtenu)
+                if (score_obtenu < min):
+                    min = score_obtenu
+                    match = re.search('[^0-9^#]*', line)
+                    if match:
+                        nom = match.group(0)
+                    match = re.search('\d{4}-\d{2}-\d{2}', line)
+                    if match:
+                        date = match.group(0)
+            else:
+                print("il n'y a pas encore de résultat")
     await ctx.send("{} a obtenu le meilleur delta, à savoir {} le {}".format(nom, min, date))
 
 
@@ -295,17 +293,11 @@ async def godart(ctx):
 # TELETCHEA -----------------
 @bot.command()
 async def teletchea(ctx):
-    cartouches = open("cartouches.txt","r")
-    qte=cartouches.read()
+    with open("cartouches.txt","r") as cartouches :
+        qte = int(1.5*int(cartouches.read()))
+    with open("cartouches.txt","w") as cartouches :
+        cartouches.write(str(qte))
     await ctx.send(f'{qte} articles se sont pris une cartouche :gun:')
-    qte=int(qte)
-    qte=qte*1.5
-    qte=int(qte)
-    cartouches.close
-    cartouches = open("cartouches.txt","w")
-    qte=str(qte)
-    cartouches.write(qte)
-    cartouches.close
 
 #************* SUPPRESSION DE MESSAGES *****************************************
 
@@ -322,10 +314,6 @@ async def clear_error(ctx, error):
         await ctx.send(f"Il faut mettre un nombre après $clear")
     else :
         print(error)
-#     else :
-#         MYSELF = bot.get_user(404395089389944832)
-#         await MYSELF.send(f"Une erreur non anticipée est advenue : \n'{error}'\n\
-# Salon : {ctx.channel.name}")
 
 
 #************* UNE FONCTION POUR LIMITER LES DISTRACTIONS **********************
@@ -368,7 +356,9 @@ async def salon_error():
 
 
 #suppression des rôles et salons
-@bot.command(help="Supprime un salon et un rôle\nDonner le nom du salon et du rôle en arguments de la commande\nPour les noms composés de plusieurs mots, utiliser les guillemets")
+@bot.command(help="Supprime un salon et un rôle\n\
+Donner le nom du salon et du rôle en arguments de la commande\n\
+Pour les noms composés de plusieurs mots, utiliser les guillemets")
 @commands.has_permissions(administrator=True)
 async def dels(ctx, ch : discord.TextChannel, rl : discord.Role):
     await rl.delete()
@@ -389,22 +379,11 @@ async def dels_error():
 #Comptage des messages, envoi de messages aléatoire et réaction aux messages ***
 @bot.event
 async def on_message(message):
-    # from spammage import rappel
-    # await rappel(message)
-
-    #partie comptage ---------
     if  message.guild is None :
         print(f"Message reçu de {message.author} : {message.content}\n")
 
-    elif message.guild.id == 621610918429851649  : #and len(message.content)>2
-        # await message.add_reaction("🎉")
-        # await message.add_reaction("🎂")
-        # await message.add_reaction("🍺")
-        # await message.add_reaction("🍻")
-        # await message.add_reaction("🥃")
-        # await message.add_reaction("🍷")
-        # await message.add_reaction("🥰")
-
+    #partie comptage ---------
+    elif message.guild.id == 621610918429851649  :
         auteur=str(message.author)
         try :
             with open("rangs.json", "r+") as rangs:
@@ -426,6 +405,7 @@ async def on_message(message):
     await react_mess(message)   #réaction textuelle à certains messages
     #await discut(message)       #réaction à une mention du bot
 
+    # NOTE: this is essential for the bot to stay aware of commands
     await bot.process_commands(message)
 
 
@@ -465,17 +445,12 @@ async def rank(ctx):
     top=5
     liste_auteurs = []
     with open("rangs.json", "r") as rangs:
-        dict = json.load(rangs)
-        for key, value in dict.items():
-            temp = [key,value]
-            liste_auteurs.append(temp)
-            if len(liste_auteurs)<int(top) :
-                top = int(len(liste_auteurs))
-    liste_auteurs.sort(key=lambda liste_auteurs: liste_auteurs[1], reverse=True)
+        rangsDict = json.load(rangs)
+        liste_auteurs = sorted(rangsDict, key=lambda auteur: rangsDict[auteur], reverse=True)
     sortie = ""
     i = 1
     for auteur in liste_auteurs :
-        sortie = sortie + (f"Top {i} : {auteur[0]} avec {str(auteur[1])} messages\n")
+        sortie = sortie + (f"Top {i} : {auteur} avec {str(rangsDict[auteur])} messages\n")
         i+=1
     embed = discord.Embed(title="Qui spam le plus le salon ?", description=sortie)
     await ctx.send(embed=embed)
@@ -560,15 +535,6 @@ async def aide(ctx):
         value="$silence permet de masquer la majorité des salons, $retour permet de revenir à la normale")
     await ctx.send(embed=embed)
 
-#************** APPEL DU BOT DE TESTING ****************************************
-
-@bot.command(help="Apelle un bébé bot afin de réaliser des tests à l'éthique discutable")
-async def BOT(ctx):
-    await ctx.send("Je t'envoie mon fils, il est un peu bordélique mais parfois il est utile...")
-    with open("summon.txt", "w+") as summon :
-        summon.write(str(ctx.channel.id))
-    global child
-    child = subprocess.Popen("./child.py")
 
 #************** APPEL DU BOT DE JEUX *******************************************
 
@@ -615,6 +581,11 @@ async def on_ready():
 
 #************ FIN ***********************FIN ***********************************
 
-with open('token.txt', 'r') as token :
-    t = token.read()
-    bot.run(t)
+def main():
+    with open('token.txt', 'r') as token :
+        t = token.read()
+        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        bot.run(t)
+
+if __name__ == '__main__':
+    main()

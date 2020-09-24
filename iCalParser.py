@@ -85,6 +85,20 @@ def timeToEnd(url):
     secsRemaining = int((date-now).total_seconds())
     return round(secsRemaining/60, 1)
 
+def formatTT(timetable, DT) :
+    regex = "Matière : (.*)\nPersonnel : (.*)\nGroupe : (.*)\nSalle : (.*)\nRemarques : (.*)"
+    match = re.search(regex, timetable)
+    formatStr = f"```md\n\
+<Heure : {DT}>\n\
+# Matière :  \n\
+{match.group(1)}\n\
+# Enseignant : \n\
+{match.group(2)}\n\
+# Groupe(s) : \n\
+{match.group(3)}\n\
+# Salle : \n\
+{match.group(4)}```"
+    return formatStr
 
 if __name__ == '__main__':
     calurl = "https://edt.univ-nantes.fr/sciences/g351247.ics"

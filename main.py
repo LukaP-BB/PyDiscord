@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 #-*- coding:utf-8 -*-
 import discord          #on fait un bot pour discord, c'est de première nécessité
+from discord.ext import commands
+from discord.ext.commands import CommandNotFound
 import random           #importe la bilbiothèque nécessaire pour créer de l'aléatoire
 import math             #importe le module math pour la valeur aboslue
 import re               #importe les expressions régulières
@@ -9,13 +11,12 @@ import time             #permet d'utiliser sleep
 import json             #pour interragir avec des fichiers json
 import os               #pour interragir avec le système, lancer des commandes en bash par exemple
 import subprocess       #même idée
+
+
 from chat import *
 import iCalParser as icp
 import coroPack.interface as itf
-
 import anniv as anvs
-
-from discord.ext import commands
 
 bot = commands.Bot(command_prefix = '$') #création d'un instance de bot
 
@@ -30,26 +31,59 @@ async def quit(ctx):
     else :
         await ctx.send("nope")
 
-#-------- pour tuer les subprocess ---------------------------------------------
-@bot.command()
-async def kill(ctx):
-    PanicBot.terminate()
-    p4.terminate()
-    child.terminate()
-
-
 @bot.command()
 async def lulu(ctx):
     """Pour faire plaisir à Nico"""
     auteur = ctx.message.author.mention
     await ctx.send(f"Laisses Lucie tranquille {auteur}")
 
+@bot.event
+async def on_member_join(member):
+    MYSELF = bot.get_user(404395089389944832)
+    await MYSELF.send(f"{member.mention} a rejoint le serveur **{member.guild}** :D")
+    channel = bot.get_channel(671289712576692234)
+    role_retour = discord.utils.get(ctx.guild.roles, id=671289711846883328)
+    await member.add_roles(role_retour, reason=None, atomic=True)
+    await channel.send(f"Bienvenue {member.mention} ! <:youpicquet:685075741259595781>")
+
+@bot.event
+async def on_member_leave(member):
+    MYSELF = bot.get_user(404395089389944832)
+    await MYSELF.send(f"{member.mention} a quitté le serveur :(")
+
+@bot.command()
+async def ban(ctx):
+    await ctx.send(f"T'as cru quoi {ctx.author.mention} ? <:kekw:636583908334501899>")
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def kick(ctx, user_id, reason=None):
+    MYSELF = bot.get_user(404395089389944832)
+    ID = re.search("\d{17,20}", user_id).group(0)
+    print(ID)
+    ID = int(ID)
+    guild = ctx.guild
+    person = bot.get_user(ID)
+    if ID == 404395089389944832 :
+        await ctx.author.send(f"Bien essayé {ctx.author.mention} 🤣\nEnvoie un message à {MYSELF.mention}.")
+        await guild.kick(ctx.author.id, reason="On ne kick pas le patron, namého")
+    else :
+        await guild.kick(person, reason=reason)
+        await ctx.send(f"🦀 {ctx.author.mention} a kick {person.mention} 🦀")
+
+@kick.error
+async def kickerr(ctx, error):
+    await ctx.send("Je n'ai pas pu trouver la personne mentionnée...")
+
 #----------- commandes liées au calendrier -------------------------------------
+
 @bot.command()
 async def zzz(ctx):
     roles = [role.name for role in ctx.author.roles]
     if "alternant" in roles :
         calurl = "https://edt.univ-nantes.fr/sciences/g351268.ics"
+    elif "biostats" in roles :
+        calurl = "https://edt.univ-nantes.fr/medecine/g497301.ics"
     else :
         calurl = "https://edt.univ-nantes.fr/sciences/g351247.ics"
 
@@ -87,12 +121,11 @@ async def cours(ctx, amount=1):
 
     # useless and childish easter eggs
     if amount == 69 :
-        await ctx.send("Nice 😏")
+        ctx.send("Nice 😏")
     elif amount == 42 :
-        await ctx.send("<:YouKnow:648164979245318144>")
+        ctx.send("<:YouKnow:648164979245318144>")
     elif amount == 420 :
-        await ctx.send("🌿")
-
+        ctx.send("🌿")
     # and useful stuff
     elif amount > 3 :
         await ctx.send("""```fix
@@ -424,7 +457,7 @@ async def mess(ctx):
             max = int(liste[auteur])
             print(max)
     if nb_messages >= max-1 :
-        message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\n T'es le top 1, le king, on ne voit que toi sur discord, félicitations BG")
+        message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nT'es le top 1, le king, on ne voit que toi sur discord, félicitations BG")
     elif nb_messages/somme > 1/10 :
         message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nTu fais partie de l'élite, le top 10%, GG")
     elif nb_messages/somme > 1/15 :
@@ -442,7 +475,7 @@ async def mess(ctx):
 #Personnes les plus bavardes du chat
 @bot.command()
 async def rank(ctx):
-    top=5
+    top = 5
     liste_auteurs = []
     with open("rangs.json", "r") as rangs:
         rangsDict = json.load(rangs)
@@ -451,7 +484,7 @@ async def rank(ctx):
     i = 1
     for auteur in liste_auteurs :
         sortie = sortie + (f"Top {i} : {auteur} avec {str(rangsDict[auteur])} messages\n")
-        i+=1
+        i += 1
     embed = discord.Embed(title="Qui spam le plus le salon ?", description=sortie)
     await ctx.send(embed=embed)
 
@@ -461,10 +494,10 @@ async def rank(ctx):
 @bot.event
 async def on_message_delete(message):
     if len(message.content) > 2 and not message.author.bot :
-        now=datetime.datetime.now()
-        now=now - datetime.timedelta(hours=1, seconds=3)
+        now = datetime.datetime.now()
+        now = now - datetime.timedelta(hours=1, seconds=3)
         #On vérifie si le message a été supprimé par son auteur ou par un modérateur
-        guild=message.guild
+        guild = message.guild
         #Pour cela, on va chercher le dernier log de suppression de message
         async for entry in guild.audit_logs(limit=1, after=now, action=discord.AuditLogAction.message_delete):
             censeur=entry.user        #on récupère le nom du modo
@@ -537,7 +570,6 @@ async def aide(ctx):
 
 
 #************** APPEL DU BOT DE JEUX *******************************************
-
 @bot.command(help="Appelle le bot de jeux")
 async def jeux(ctx):
     channel = bot.get_channel(667101857948237844)
@@ -551,7 +583,6 @@ async def jeux(ctx):
 
 
 #************* GESTION GLOBALE DES ERREURS *************************************
-from discord.ext.commands import CommandNotFound
 @bot.event
 async def on_command_error(ctx, error):
     # pass
@@ -576,7 +607,7 @@ async def ping(ctx):
 #*************MESSAGE D'ACCUEIL ************************************************
 @bot.event
 async def on_ready():
-    print('bonjour')
+    print('Bot connecté')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Untitled Goose Game"))
 
 #************ FIN ***********************FIN ***********************************
@@ -584,7 +615,7 @@ async def on_ready():
 def main():
     with open('token.txt', 'r') as token :
         t = token.read()
-        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        #t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

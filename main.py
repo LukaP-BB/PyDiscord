@@ -18,7 +18,7 @@ import iCalParser as icp
 import coroPack.interface as itf
 import anniv as anvs
 
-bot = commands.Bot(command_prefix = '!') #création d'un instance de bot
+bot = commands.Bot(command_prefix = '$') #création d'un instance de bot
 
 #************ FERMETURE DU BOT *************************************************
 
@@ -618,7 +618,7 @@ async def on_ready():
 def main():
     with open('token.txt', 'r') as token :
         t = token.read()
-        t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

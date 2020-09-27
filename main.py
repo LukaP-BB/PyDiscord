@@ -18,7 +18,7 @@ import iCalParser as icp
 import coroPack.interface as itf
 import anniv as anvs
 
-bot = commands.Bot(command_prefix = '$') #création d'un instance de bot
+bot = commands.Bot(command_prefix = '!') #création d'un instance de bot
 
 #************ FERMETURE DU BOT *************************************************
 
@@ -41,9 +41,12 @@ async def lulu(ctx):
 async def on_member_join(member):
     MYSELF = bot.get_user(404395089389944832)
     await MYSELF.send(f"{member.mention} a rejoint le serveur **{member.guild}** :D")
-    channel = bot.get_channel(671289712576692234)
-    role_retour = discord.utils.get(ctx.guild.roles, id=671289711846883328)
-    await member.add_roles(role_retour, reason=None, atomic=True)
+    if member.guild.id == 630852721573888061 :
+        channel = bot.get_channel(759743347245449237)
+    else :
+        channel = bot.get_channel(671289712576692234)
+        role_retour = discord.utils.get(member.guild.roles, id=671289711846883328)
+        await member.add_roles(role_retour, reason=None, atomic=True)
     await channel.send(f"Bienvenue {member.mention} ! <:youpicquet:685075741259595781>")
 
 @bot.event
@@ -615,7 +618,7 @@ async def on_ready():
 def main():
     with open('token.txt', 'r') as token :
         t = token.read()
-        #t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

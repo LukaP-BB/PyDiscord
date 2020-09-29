@@ -18,7 +18,11 @@ import iCalParser as icp
 import coroPack.interface as itf
 import anniv as anvs
 
-bot = commands.Bot(command_prefix = '$') #création d'un instance de bot
+intents = discord.Intents.default()
+intents.typing = False
+intents.presences = False
+intents.members = True
+bot = commands.Bot(command_prefix = '$', intents=intents) #création d'un instance de bot
 
 #************ FERMETURE DU BOT *************************************************
 

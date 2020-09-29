@@ -39,6 +39,7 @@ async def lulu(ctx):
 
 @bot.event
 async def on_member_join(member):
+    print(member)
     MYSELF = bot.get_user(404395089389944832)
     await MYSELF.send(f"{member.mention} a rejoint le serveur **{member.guild}** :D")
     if member.guild.id == 630852721573888061 :
@@ -62,7 +63,7 @@ async def ban(ctx):
 @commands.has_permissions(administrator=True)
 async def kick(ctx, user_id, reason=None):
     MYSELF = bot.get_user(404395089389944832)
-    ID = re.search("\d{17,20}", user_id).group(0)
+    ID = re.search(r"\d{17,20}", user_id).group(0)
     print(ID)
     ID = int(ID)
     guild = ctx.guild
@@ -270,7 +271,7 @@ async def best(ctx):
     with open("resultats.txt", "r") as resultats :
         min = 101
         for line in resultats:
-            match = re.search('(: )(\d?\d)( :)', line) #chaque expression entre parenthèse correspond à un groupe
+            match = re.search(r'(: )(\d?\d)( :)', line) #chaque expression entre parenthèse correspond à un groupe
             if match:
                 score_obtenu = match.group(2)          #le group(2) fait référence aux deuxièmes parenthèses du match
                 score_obtenu = int(score_obtenu)
@@ -279,7 +280,7 @@ async def best(ctx):
                     match = re.search('[^0-9^#]*', line)
                     if match:
                         nom = match.group(0)
-                    match = re.search('\d{4}-\d{2}-\d{2}', line)
+                    match = re.search(r'\d{4}-\d{2}-\d{2}', line)
                     if match:
                         date = match.group(0)
             else:
@@ -618,7 +619,7 @@ async def on_ready():
 def main():
     with open('token.txt', 'r') as token :
         t = token.read()
-        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        #t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

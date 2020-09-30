@@ -36,10 +36,14 @@ async def quit(ctx):
         await ctx.send("nope")
 
 @bot.command()
-async def lulu(ctx):
-    """Pour faire plaisir à Nico"""
-    auteur = ctx.message.author.mention
-    await ctx.send(f"Laisses Lucie tranquille {auteur}")
+async def lulu(ctx, member : discord.Member = None):
+    auteur = ctx.message.author
+    if member == None and auteur.id != 621748334104805416:
+        await ctx.send(f"Laisses Lucie tranquille {auteur.mention} !")
+    elif member == None :
+        await ctx.send(f"Gnagnagnagna")
+    else :
+        await ctx.send(f"Laisses Lucie tranquille {member.mention} !")
 
 @bot.event
 async def on_member_join(member):
@@ -141,11 +145,18 @@ A chaque jour suffit sa peine, pas plus de 3 cours OK ? 😴
 ```""")
     else :
         fstr = f"> __**Cours à venir : **__\n> *Les cours suivants sont prévus pour les __{statut}__ :*\n"
+        await ctx.send(fstr)
         events = icp.searchTimetable(calurl, amount)
         try :
             for event in events :
-                fstr += icp.formatTT(event['description'], event["date"])
-            await ctx.send(fstr)
+                dictres = icp.formatTT2(event['description'], event["date"])
+                embed = discord.Embed(title=dictres["Matière"],
+                                    description=event["date"],
+                                    colour=colour)
+                embed.add_field(name="Salle", value=dictres["Salle"], inline=False)
+                embed.add_field(name="Enseignant", value=dictres["Enseignant"], inline=False)
+                embed.add_field(name="Groupes", value=dictres["Groupes"], inline=False)
+                await ctx.send(embed=embed)
         except AttributeError:
             await ctx.send(f"Aucun cours n'a été trouvé pour les __{statut}__, tanquille la vie ?")
 

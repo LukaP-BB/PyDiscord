@@ -100,6 +100,17 @@ def formatTT(timetable, DT) :
 {match.group(4)}```"
     return formatStr
 
+def formatTT2(timetable, DT) :
+    regex = "Matière : (.*)\nPersonnel : (.*)\nGroupe : (.*)\nSalle : (.*)\nRemarques : (.*)"
+    match = re.search(regex, timetable)
+    dictRes = {
+        "Matière" : match.group(1),
+        "Enseignant" : match.group(2),
+        "Groupes" : match.group(3),
+        "Salle" : match.group(4)
+        }
+    return dictRes
+
 if __name__ == '__main__':
     calurl = "https://edt.univ-nantes.fr/sciences/g351247.ics"
     print(timeToEnd(calurl))

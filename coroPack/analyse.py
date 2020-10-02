@@ -4,28 +4,25 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import json
 import requests as req
 from io import StringIO
 import datetime
 
-def loadDeps():
-    with open("coroPack/json/departments.json", "r", encoding="utf-8") as departments :
-        return json.load(departments)
-
 def timeFrame(data, d1, d2):
-    # print(d1, d2)
+    """Returns a subset of the given dataframe (date have to be inside the two given dates)"""
     data = data[data["jour"] >= d1]
     data = data[data["jour"] <= d2]
     return data
 
 def parDep(data, zone):
+    """Returns a subset of a dataframe with only the given department"""
     zone = str(zone)
     data = data[data.sexe==0]
     data = data[data.dep==zone]
     return data
 
 def france(data):
+    """Returns a dataframe where data from all departments are summed to give the data at the national level"""
     # working only on the whole population
     data = data[data.sexe==0]
     # summing all the departments
@@ -64,23 +61,17 @@ def loadData():
         last = lastdl.read()
     today = datetime.date.today().isoformat()
     if last < today :
-        print("Loading data from URL")
+        # print("Loading data from URL")
         return loadFromUrl()
     else :
-        print("Loading data from cache")
+        # print("Loading data from cache")
         return loadFromCache()
 
 
 if __name__ == '__main__':
-    # print(plt.style.available)
-    # data = pd.read_csv("data.csv", delimiter=";")
     t1 = datetime.datetime.now()
     # loadFromUrl()
-    loadData()
+    df = loadData()
+    df = france(df)
+    print(df)
     print(datetime.datetime.now()-t1)
-    # df = france(data)
-    # df2 = parDep(data, 44)
-    # timeFrame(df2)
-    # print(df2)
-    # plotThat(df)
-    # plotThat(df2)

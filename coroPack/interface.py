@@ -3,21 +3,40 @@
 
 import sys
 import re
+import json
 import datetime as dtt
 
-# print(dtt.date.isoformat(dtt.date.today()))
-
 import coroPack.analyse as anl
+
+"""
+Module permettant d'interpréter les arguments donnés à une commande
+et de générer un graphique matplotlib en accord avec ces arguments
+Deux fonctions de haut niveau sont utiles :
+    - parseArgs()       :
+        retourne une liste de paramètres formattés pour être passés à la fonction plotThat()
+    - plotFromArgs()    :
+        crée un graphique au format png et retourne un dictionnaire de strings qui seront utilisés pour la création d'un embed
+"""
 
 help_message = """
 **Aide pour la commande coro :**
 ```
+La commande Coro est maintenant divisée en sous-commandes.
+    - $coro help
+    - $coro dep
+    - $coro plot
+        - tests (pour afficher un les données des tests virologiques)
+        - ou les mêmes arguments qu'avant (hosp, rea, dc, + les dates et le département) pour les données hospitalières
+    - $coro carte [tests/hospi]
+        - deux autres arguments positionnels sont acceptés : 
+        nombre de jours pour la régression linéaire et nombre de jours pour la moyenne flottante
+
 Exemples :
-    $coro
-    $coro 44
-    $coro 75 hosp
-    $coro dc rad
-    $coro 10-07-2020
+    $coro plot 44
+    $coro plot 75 hosp
+    $coro plot tests 44 01-09-2020
+    $coro carte hospi
+    $coro carte tests
     $coro help
     $coro dep
 
@@ -34,11 +53,18 @@ Un certain nombre d'arguments sont acceptés, et le bot fera de son mieux pour l
     - help : affiche ce message
     - dep : envoie en DM la liste des départements acceptés (leur code et leur nom)
 
-Source des données : https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/#_
+Source des données : 
+https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/#_
+https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/
 ```"""
 
+def loadDeps():
+    with open("coroPack/json/departments.json", "r", encoding="utf-8") as departments :
+        return json.load(departments)
+
 def sendDeps():
-    deps = anl.loadDeps()
+    """format a list of departments and their respective code, as a big string"""
+    deps = loadDeps()
     finalStr = "```py\nLes département : \n"
     i = 0
     for dep in deps :
@@ -106,31 +132,37 @@ def sortDataType(params, args):
     return params
 
 def parseArgs(args):
+    """Parse the arguments givent to the command and returns a comprehensive dict"""
     params = {
-        "type" : "plot",
+        "type" : "hospi",
         "dep" : None,
         "d1" : None,
         "d2" : None,
         "err" : [],
     }
+    if "tests" in args :
+        params["type"] = "tests"
+
     if "dep" in args or "départements" in args :
         params["type"] = "dep"
     elif "help" in args :
         params["type"] = "help"
     else :
-        deps = anl.loadDeps()
+        deps = loadDeps()
         params["dep"] = look4dep(args, deps)
         params = sortDates(params, args)
         params = sortDataType(params, args)
     return params
 
 def depFromCode(code):
-    deps = anl.loadDeps()
+    """Returns the name of a department given it's code"""
+    deps = loadDeps()
     for dep in deps :
         if dep["code"] == code :
             return dep["name"]
 
 def fromIsoformat(date) :
+    """re formating a date to a more readable format"""
     date = re.search("(\d\d\d\d)-(\d\d)-(\d\d)", date)
     annee = date.group(1)
     mois = date.group(2)
@@ -142,7 +174,7 @@ def getInfos(args):
     finalInfos = {}
     dataType = {
         "hosp" : "hospitalisations",
-        "rea" : "réanimation",
+        "rea" : "réanimations",
         "dc" : "décès",
         "rad" : "retours à domicile"
     }
@@ -161,7 +193,7 @@ def getInfos(args):
     return finalInfos
 
 def plotFromArgs(args):
-    """Creates a plot in jpg format with the given arguments"""
+    """Creates a plot in jpg format with the given arguments formated by parseArgs()"""
     df2 = anl.loadData()
 
     if args["dep"] == "FR" :

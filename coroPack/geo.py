@@ -4,7 +4,6 @@
 import requests as req
 import pandas as pd
 from scipy import stats
-import scipy.signal
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import datetime as dtt

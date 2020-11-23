@@ -533,7 +533,7 @@ async def reactions(ctx) :
 
     reactions = sorted(reactions.items(), key=lambda item: item[1], reverse=True)
     reactions = [f"{reaction[1]} : {reaction[0]}" for reaction in reactions]
-    await ctx.send("> **Top des réactions :** \n> \n> " + "\n> ".join(reactions))
+    await ctx.send("> **Top des réactions :** \n> \n> " + "\t".join(reactions))
 
 #Comptage des messages, envoi de messages aléatoire et réaction aux messages ***
 @bot.event

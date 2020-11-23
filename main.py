@@ -23,7 +23,7 @@ intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
 intents.members = True
-bot = commands.Bot(command_prefix = '$', intents=intents) #création d'un instance de bot
+bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
 
 #************ FERMETURE DU BOT *************************************************
 
@@ -203,7 +203,7 @@ async def plot(ctx, *args):
                     colour=discord.Colour.magenta())
                 embed.set_image(url="attachment://fig.jpg")
                 await ctx.send(file=file, embed=embed)
-            
+
 @plot.error
 async def plot_error(ctx, error):
     if isinstance(error, commands.errors.CommandInvokeError):
@@ -267,6 +267,7 @@ async def m(ctx, chan_id, content):
 async def anniv(ctx, com="False", amount=3):
     liste_anniversaires = anvs.loadAnnivs()
     today = datetime.date.today()
+
     datesAnniv = [key for key in liste_anniversaires.values()]
 
     if today in datesAnniv and com not in ["next", "help"]:
@@ -304,6 +305,10 @@ async def anniv(ctx, com="False", amount=3):
 "Utilises `$anniv` tel quel pour ping la personne dont c'est l'anniversaire\n\
 Utilises `$anniv next <nombre>` pour connaitre les anniversaires à venir"
         )
+
+    elif today == datetime.datetime(2020, 12, 1) :
+        la_super_phrase_de_marine = "blabla"
+        await ctx.send(la_super_phrase_de_marine)
 
 
 #************* JEU DE HASARD ***************************************************
@@ -407,6 +412,14 @@ async def teletchea(ctx):
         cartouches.write(str(qte))
     await ctx.send(f'{qte} articles se sont pris une cartouche :gun:')
 
+# SINOQUET ------------------
+@bot.command()
+async def sinoquet(ctx):
+    with open("bot-sinoquet.txt","r") as phrases :
+        phrases = phrases.readlines()
+    await ctx.send(random.sample(phrases, 1)[0].strip())
+
+
 #************* SUPPRESSION DE MESSAGES *****************************************
 
 @bot.command(help="efface le nombre de messages indiqué", hidden=True)
@@ -479,10 +492,38 @@ async def dels_error():
 
 #************ PARTIE COMPTAGE DES MESSAGES / EVENTS ****************************
 
-# @bot.event
-# async def on_reaction_add(reaction, user):
-#     from spammage import rappel2
-#     await rappel2(reaction, user)
+@bot.event
+async def on_reaction_add(reaction, user):
+    try :
+        name = reaction.emoji.name
+        ID = reaction.emoji.id
+        name = f"<:{name}:{ID}>"
+    except :
+        name = reaction.emoji
+        if name == "📌" :
+            await reaction.message.pin(reason=f"{user} a épinglé un message")
+    else :
+        with open("reactions.json", "r", encoding="utf-8") as reactionF :
+            reactions = json.load(reactionF)
+
+        if name in reactions.keys() :
+            reactions[name] +=1
+        else :
+            reactions[name] = 1
+
+        with open("reactions.json", "w+", encoding="utf-8") as reactionF :
+            json.dump(reactions, reactionF)
+    # print(name)
+
+
+@bot.command()
+async def reactions(ctx) :
+    with open("reactions.json", "r") as reactionF :
+        reactions = json.load(reactionF)
+
+    reactions = sorted(reactions.items(), key=lambda item: item[1], reverse=True)
+    reactions = [f"{reaction[1]} : {reaction[0]}" for reaction in reactions]
+    await ctx.send("> **Top des réactions :** \n> \n> " + "\n> ".join(reactions))
 
 #Comptage des messages, envoi de messages aléatoire et réaction aux messages ***
 @bot.event
@@ -683,7 +724,7 @@ async def ping(ctx):
 @bot.event
 async def on_ready():
     print('Bot connecté')
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Untitled Goose Game"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Plague Inc."))
 
 #************ FIN ***********************FIN ***********************************
 

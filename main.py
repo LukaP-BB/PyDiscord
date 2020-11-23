@@ -25,6 +25,8 @@ intents.presences = False
 intents.members = True
 bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
 
+DATE_HEURE_CONNEXION = datetime.datetime.now()
+
 #************ FERMETURE DU BOT *************************************************
 
 @bot.command(hidden=True)
@@ -501,7 +503,9 @@ async def on_reaction_add(reaction, user):
     except :
         name = reaction.emoji
         if name == "📌" :
-            await reaction.message.pin(reason=f"{user} a épinglé un message")
+            await reaction.message.pin(reason=f"{user}")
+        if name == "🔨" :
+            await reaction.message.unpin(reason=f"{user}")
     else :
         with open("reactions.json", "r", encoding="utf-8") as reactionF :
             reactions = json.load(reactionF)
@@ -514,6 +518,12 @@ async def on_reaction_add(reaction, user):
         with open("reactions.json", "w+", encoding="utf-8") as reactionF :
             json.dump(reactions, reactionF)
     # print(name)
+
+
+@bot.event
+async def on_reaction_remove(reaction, user):
+    if reaction.emoji == "📌" :
+        await reaction.message.unpin(reason=f"{user}")
 
 
 @bot.command()
@@ -532,7 +542,7 @@ async def on_message(message):
         print(f"Message reçu de {message.author} : {message.content}\n")
 
     #partie comptage ---------
-    elif message.guild.id == 621610918429851649  :
+    elif message.guild.id in [621610918429851649, 630852721573888061]  :
         auteur=str(message.author)
         try :
             with open("rangs.json", "r+") as rangs:
@@ -588,12 +598,32 @@ async def mess(ctx):
         message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nJe crois que je ne peux plus rien pour toi...")
     await ctx.send(message)
 
+def timeDeltaToStr(timedelta:datetime.timedelta) :
+    reg = r"(\d{1,3}):(\d{2}):(\d{2}.\d*)"
+    find = re.search(reg, str(timedelta))
+    heures = int(find.group(1))
+    minutes = int(find.group(2))
+    secondes = float(find.group(3))
+    jours = timedelta.days
+    if heures > 23 :
+        jours = heures//24
+        heures = heures%24
+    return jours, heures, minutes, secondes
+
 #Personnes les plus bavardes du chat
 @bot.command()
-async def rank(ctx):
+async def rank(ctx, a="new"):
+    if a ==  "new" :
+        fileRangs = "rangs.json"
+        jours, heures, minutes, secondes = timeDeltaToStr(datetime.datetime.now()-DATE_HEURE_CONNEXION)
+        infos = f"Messages envoyés depuis la dernière reconnexion du bot il y a {jours} jours, {heures} heures, {minutes} minutes et {secondes} secondes"
+
+    elif a == "old":
+        fileRangs = "rangs_old.json"
+        infos = "Vieux décompte des messages, c'était l'bon temps"
     top = 5
     liste_auteurs = []
-    with open("rangs.json", "r") as rangs:
+    with open(fileRangs, "r") as rangs:
         rangsDict = json.load(rangs)
         liste_auteurs = sorted(rangsDict, key=lambda auteur: rangsDict[auteur], reverse=True)
     sortie = ""
@@ -602,6 +632,7 @@ async def rank(ctx):
         sortie = sortie + (f"Top {i} : {auteur} avec {str(rangsDict[auteur])} messages\n")
         i += 1
     embed = discord.Embed(title="Qui spam le plus le salon ?", description=sortie)
+    await ctx.send(infos)
     await ctx.send(embed=embed)
 
 #************ ON AFFICHE LES BOLCHEVIKS ET ON LOG LES MESSAGES SUPPRIMES *******

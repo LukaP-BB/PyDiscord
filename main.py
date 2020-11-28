@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding:utf-8 -*-
 import discord          #on fait un bot pour discord, c'est de première nécessité
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandNotFound
 import random           #importe la bilbiothèque nécessaire pour créer de l'aléatoire
 import math             #importe le module math pour la valeur aboslue
@@ -18,14 +18,27 @@ import iCalParser as icp
 import coroPack.interface as itf
 import coroPack.geo as geo
 import anniv as anvs
+import driveAPI.driveAPI as drive
 
 intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
 intents.members = True
-bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
+bot = commands.Bot(command_prefix = '!', intents=intents) #création d'une instance de bot
 
 DATE_HEURE_CONNEXION = datetime.datetime.now()
+
+def timeDeltaToStr(timedelta:datetime.timedelta) :
+    reg = r"(\d{1,3}):(\d{2}):(\d{2}.\d*)"
+    find = re.search(reg, str(timedelta))
+    heures = int(find.group(1))
+    minutes = int(find.group(2))
+    secondes = float(find.group(3))
+    jours = timedelta.days
+    if heures > 23 :
+        jours = heures//24
+        heures = heures%24
+    return jours, heures, minutes, secondes
 
 #************ FERMETURE DU BOT *************************************************
 
@@ -37,6 +50,21 @@ async def quit(ctx):
         await bot.close()
     else :
         await ctx.send("nope")
+
+@bot.command()
+async def uptime(ctx) :
+    jours, heures, minutes, secondes = timeDeltaToStr(datetime.datetime.now-DATE_HEURE_CONNEXION)
+    await ctx.send(f"Bot connecté depuis {jours} jous, {heures} heures et {minutes} minutes.")
+
+@tasks.loop(minutes=3.0)
+async def slow_count():
+    drive.upload(drive.RANKS)
+    drive.upload(drive.REACTIONS)
+    print(f"Updating files")
+
+@slow_count.after_loop
+async def after_slow_count():
+    pass
 
 @bot.command()
 async def lulu(ctx, member : discord.Member = None):
@@ -507,7 +535,7 @@ async def on_reaction_add(reaction, user):
         if name == "🔨" :
             await reaction.message.unpin(reason=f"{user}")
     else :
-        with open("reactions.json", "r", encoding="utf-8") as reactionF :
+        with open("reactions.json", "r", encoding="utf-8-sig") as reactionF :
             reactions = json.load(reactionF)
 
         if name in reactions.keys() :
@@ -515,7 +543,7 @@ async def on_reaction_add(reaction, user):
         else :
             reactions[name] = 1
 
-        with open("reactions.json", "w+", encoding="utf-8") as reactionF :
+        with open("reactions.json", "w+", encoding="utf-8-sig") as reactionF :
             json.dump(reactions, reactionF)
     # print(name)
 
@@ -528,12 +556,12 @@ async def on_reaction_remove(reaction, user):
 
 @bot.command()
 async def reactions(ctx) :
-    with open("reactions.json", "r") as reactionF :
+    with open("reactions.json", "r", encoding="utf-8-sig") as reactionF :
         reactions = json.load(reactionF)
 
     reactions = sorted(reactions.items(), key=lambda item: item[1], reverse=True)
     reactions = [f"{reaction[1]} : {reaction[0]}" for reaction in reactions]
-    await ctx.send("> **Top des réactions :** \n> \n> " + "\t".join(reactions))
+    await ctx.send("> **Top des réactions :** \n> \n> " + "\t ".join(reactions))
 
 #Comptage des messages, envoi de messages aléatoire et réaction aux messages ***
 @bot.event
@@ -545,7 +573,7 @@ async def on_message(message):
     elif message.guild.id in [621610918429851649, 630852721573888061]  :
         auteur=str(message.author)
         try :
-            with open("rangs.json", "r+") as rangs:
+            with open("rangs.json", "r+", encoding="utf-8-sig") as rangs:
                 liste_auteurs=json.load(rangs)
                 if auteur in liste_auteurs :
                     liste_auteurs[auteur] = liste_auteurs[auteur] +1
@@ -554,7 +582,7 @@ async def on_message(message):
         except Exception as e:
             print(e)
         try :
-            with open("rangs.json", "w+") as rangs:
+            with open("rangs.json", "w+", encoding="utf-8-sig") as rangs:
                 rangs.write(json.dumps(liste_auteurs, sort_keys=True, indent=4))
         except Exception as e:
             print(e)
@@ -573,7 +601,7 @@ async def on_message(message):
 async def mess(ctx):
     somme = 0
     auteur = (str(ctx.message.author))
-    with open("rangs.json", "r") as auteurs:
+    with open("rangs.json", "r", encoding="utf-8-sig") as auteurs:
         liste = json.load(auteurs)
         nb_messages = liste[auteur]
     max = 0
@@ -598,18 +626,6 @@ async def mess(ctx):
         message = (f"Tu as envoyé {nb_messages} messages {ctx.message.author.mention}\nJe crois que je ne peux plus rien pour toi...")
     await ctx.send(message)
 
-def timeDeltaToStr(timedelta:datetime.timedelta) :
-    reg = r"(\d{1,3}):(\d{2}):(\d{2}.\d*)"
-    find = re.search(reg, str(timedelta))
-    heures = int(find.group(1))
-    minutes = int(find.group(2))
-    secondes = float(find.group(3))
-    jours = timedelta.days
-    if heures > 23 :
-        jours = heures//24
-        heures = heures%24
-    return jours, heures, minutes, secondes
-
 #Personnes les plus bavardes du chat
 @bot.command()
 async def rank(ctx, a="new"):
@@ -623,7 +639,7 @@ async def rank(ctx, a="new"):
         infos = "Vieux décompte des messages, c'était l'bon temps"
     top = 5
     liste_auteurs = []
-    with open(fileRangs, "r") as rangs:
+    with open(fileRangs, "r", encoding="utf-8-sig") as rangs:
         rangsDict = json.load(rangs)
         liste_auteurs = sorted(rangsDict, key=lambda auteur: rangsDict[auteur], reverse=True)
     sortie = ""
@@ -755,14 +771,17 @@ async def ping(ctx):
 @bot.event
 async def on_ready():
     print('Bot connecté')
+    drive.download(drive.RANKS)
+    drive.download(drive.REACTIONS)
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Plague Inc."))
+    slow_count.start()
 
 #************ FIN ***********************FIN ***********************************
 
 def main():
     with open('token.txt', 'r') as token :
         t = token.read()
-        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

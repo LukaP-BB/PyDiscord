@@ -67,6 +67,12 @@ async def after_slow_count():
     pass
 
 @bot.command()
+async def download(ctx):
+    drive.download(drive.RANKS)
+    drive.download(drive.REACTIONS)
+    await ctx.send("Les fichiers ont été downloadés !")
+
+@bot.command()
 async def lulu(ctx, member : discord.Member = None):
     auteur = ctx.message.author
     if member == None and auteur.id != 621748334104805416:

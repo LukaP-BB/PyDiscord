@@ -320,7 +320,7 @@ async def anniv(ctx, com="False", amount=3):
 
 # ------------------------------------------------------
 
-    elif today == datetime.datetime(2020, 12, 1) :
+    elif today == datetime.date(2020, 12, 1) :
         stupid = [
             f"Hey Covid-19, bon anniversaire !!!",
             f"Hey Covid-19, bon anniversaire !!!",

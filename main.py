@@ -318,6 +318,26 @@ async def anniv(ctx, com="False", amount=3):
             mess_anniv = anvs.sendRandMess(user)
             await ctx.send(random.choice(mess_anniv))
 
+# ------------------------------------------------------
+
+    elif today == datetime.datetime(2020, 12, 1) :
+        stupid = [
+            f"Hey Covid-19, bon anniversaire !!!",
+            f"Hey Covid-19, bon anniversaire !!!",
+            f"Hey Covid-19, peut-être que, pour le monde, tu n’es qu’une personne, mais pour des personnes tu es tout le monde, bon anniversaire !!!",
+            f"Hey Covid-19, quelques bougies de plus sur le gâteau ne peuvent rien faire d’autre que d’éclairer davantage ton visage, bon anniversaire !!!",
+            f"Hey Covid-19, ce ne sont pas des cheveux blancs. Ce sont les reflets de la sagesse, bon anniversaire !!!",
+            f"Hey Covid-19, nos anniversaires sont des plumes dans l’aile large du temps.",
+            f"Covid-19,C'est l'anniversaire, dans tous les recoins. \nC'est presque tous les ans qu'on a l'anniversaire. \nGrâce à cet anni c'est la joie, c'est pratique. \nC'est au moins un principe à retenir pour faire la frite. \nCette année c'est bien, l'anniversaire tombe à pique!!",
+            f"Covid-19, Joyeux anniversaire rime avec 'reprends du dessert'. Un hasard ? Je ne pense pas !!!",
+            f"Covid-19, On ne peut pas cultiver son potager, mais à 80 ans on est un sacré pote âgé !!!",
+            f"Hey Covid-19, noyeux janniversaire !!!",
+            f"Hey Covid-19, bon anniversaire !!!" 
+            ]
+        await ctx.send(random.sample(stupid, k=1)[0])
+
+# -------------------------------------------------------
+
     elif com == "next" or com == "False" :
         if com == "next" :
             title = "<:youpicquet:685075741259595781>"
@@ -346,22 +366,6 @@ async def anniv(ctx, com="False", amount=3):
 "Utilises `$anniv` tel quel pour ping la personne dont c'est l'anniversaire\n\
 Utilises `$anniv next <nombre>` pour connaitre les anniversaires à venir"
         )
-
-    elif today == datetime.datetime(2020, 12, 1) :
-        stupid = [
-            f"Hey Covid-19, bon anniversaire !!!",
-            f"Hey Covid-19, bon anniversaire !!!",
-            f"Hey Covid-19, peut-être que, pour le monde, tu n’es qu’une personne, mais pour des personnes tu es tout le monde, bon anniversaire !!!",
-            f"Hey Covid-19, quelques bougies de plus sur le gâteau ne peuvent rien faire d’autre que d’éclairer davantage ton visage, bon anniversaire !!!",
-            f"Hey Covid-19, ce ne sont pas des cheveux blancs. Ce sont les reflets de la sagesse, bon anniversaire !!!",
-            f"Hey Covid-19, nos anniversaires sont des plumes dans l’aile large du temps.",
-            f"Covid-19,C'est l'anniversaire, dans tous les recoins. \nC'est presque tous les ans qu'on a l'anniversaire. \nGrâce à cet anni c'est la joie, c'est pratique. \nC'est au moins un principe à retenir pour faire la frite. \nCette année c'est bien, l'anniversaire tombe à pique!!",
-            f"Covid-19, Joyeux anniversaire rime avec 'reprends du dessert'. Un hasard ? Je ne pense pas !!!",
-            f"Covid-19, On ne peut pas cultiver son potager, mais à 80 ans on est un sacré pote âgé !!!",
-            f"Hey Covid-19, noyeux janniversaire !!!",
-            f"Hey Covid-19, bon anniversaire !!!" 
-            ]
-        await ctx.send(random.sample(stupid, k=1)[0])
 
 
 #************* JEU DE HASARD ***************************************************
@@ -589,7 +593,7 @@ async def on_message(message):
         print(f"Message reçu de {message.author} : {message.content}\n")
 
     #partie comptage ---------
-    elif message.guild.id in [621610918429851649, 630852721573888061]  :
+    elif message.guild.id in [621610918429851649]  :
         auteur=str(message.author)
         try :
             with open("rangs.json", "r+", encoding="utf-8-sig") as rangs:

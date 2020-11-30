@@ -20,10 +20,13 @@ REACTIONS = {
     "id" : "1nopFqfCugxT5698FhEBLfE5pIqWS5eSg7Y0vlIVTF00"
     }
 
+PROFS = {
+    "file" : "profs.json",
+    "id" : "1ofJnNU8mmt4v69q3V5igUXcula_aE5h7cm2imenyBZg"
+}
+
 def connect():
-    """Shows basic usage of the Drive v3 API.
-    Prints the names and ids of the first 10 files the user has access to.
-    """
+    "Connects the bot to my drive and returns the handler object"
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first

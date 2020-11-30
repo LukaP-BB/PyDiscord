@@ -11,6 +11,7 @@ import time             #permet d'utiliser sleep
 import json             #pour interragir avec des fichiers json
 import os               #pour interragir avec le système, lancer des commandes en bash par exemple
 import subprocess       #même idée
+import functools        #nécessaire au décorateur @profs
 
 
 from chat import *
@@ -56,15 +57,19 @@ async def uptime(ctx) :
     jours, heures, minutes, secondes = timeDeltaToStr(datetime.datetime.now() -DATE_HEURE_CONNEXION)
     await ctx.send(f"Bot connecté depuis {jours} jous, {heures} heures et {minutes} minutes.")
 
-@tasks.loop(minutes=3.0)
+
+# MISE A JOUR DES FICHIERS DU DRIVE *********************************************
+
+@tasks.loop(minutes=5)
 async def slow_count():
     drive.upload(drive.RANKS)
     drive.upload(drive.REACTIONS)
-    print(f"Updating files")
+    drive.upload(drive.PROFS)
+    # print(f"Updating files")
 
 @slow_count.after_loop
 async def after_slow_count():
-    pass
+    pass 
 
 @bot.command()
 async def download(ctx):
@@ -343,24 +348,32 @@ Utilises `$anniv next <nombre>` pour connaitre les anniversaires à venir"
         )
 
     elif today == datetime.datetime(2020, 12, 1) :
-        la_super_phrase_de_marine = "blabla"
-        await ctx.send(la_super_phrase_de_marine)
+        stupid = [
+            f"Hey Covid-19, bon anniversaire !!!",
+            f"Hey Covid-19, bon anniversaire !!!",
+            f"Hey Covid-19, peut-être que, pour le monde, tu n’es qu’une personne, mais pour des personnes tu es tout le monde, bon anniversaire !!!",
+            f"Hey Covid-19, quelques bougies de plus sur le gâteau ne peuvent rien faire d’autre que d’éclairer davantage ton visage, bon anniversaire !!!",
+            f"Hey Covid-19, ce ne sont pas des cheveux blancs. Ce sont les reflets de la sagesse, bon anniversaire !!!",
+            f"Hey Covid-19, nos anniversaires sont des plumes dans l’aile large du temps.",
+            f"Covid-19,C'est l'anniversaire, dans tous les recoins. \nC'est presque tous les ans qu'on a l'anniversaire. \nGrâce à cet anni c'est la joie, c'est pratique. \nC'est au moins un principe à retenir pour faire la frite. \nCette année c'est bien, l'anniversaire tombe à pique!!",
+            f"Covid-19, Joyeux anniversaire rime avec 'reprends du dessert'. Un hasard ? Je ne pense pas !!!",
+            f"Covid-19, On ne peut pas cultiver son potager, mais à 80 ans on est un sacré pote âgé !!!",
+            f"Hey Covid-19, noyeux janniversaire !!!",
+            f"Hey Covid-19, bon anniversaire !!!" 
+            ]
+        await ctx.send(random.sample(stupid, k=1)[0])
 
 
 #************* JEU DE HASARD ***************************************************
 
-@bot.command(help="Un petit jeu pour tuer le temps : il faut taper $score suivi d'un guess entre 0 et 100. Le bot trouve un nombre mystère aléatoire et fait la différence avec ton guess. Plus celle-ci est petite, plus tu es lucky")                           #commande $score : permet de faire un guess et d'obtenir la différence avec ce guess
+@bot.command(help="Jeu de hasard")
 async def score(ctx, guess):
-
-    random.seed()                           #initialise la seed et
-    score = random.randint(0,100)           #renvoie un nb pseudo aléatoire dans l'intervalle [0;100]
-    delta = abs(score-int(guess))  # 2 lignes pour calculer la différence absolue entre le guess et le score obtenu (abs vient de la bibliothèque math)
-
+    random.seed()
+    score = random.randint(0,100)
+    delta = abs(score-int(guess))
     await ctx.send(f'nombre mystère : {resultats}\ndifférence : {delta}')
 
-
     today = datetime.date.today()       #2 lignes pour écrire la date d'obtention du score
-
     resultats = open("resultats.txt","a")   #ouvre le fichier resultats.txt en mode "append" : chaque écriture se fait à la suite de ce qui est déjà écrit
     resultats.writelines([str(ctx.message.author), " : " ,str(delta), " : ", str(today),"\n"]) #ecrit le nom d'utilisateur, le score et la date dans chaque nouvelle ligne du .txt
     resultats.close()   # a priori utile de fermer le fichier une fois écrit pour pouvoir l'ouvrir dans une autre commande
@@ -401,43 +414,50 @@ async def best(ctx):
 
 
 # ************* UNE SERIE DE FLORILEGES DE PHRASES TYPIQUES ********************
+def profs(function):
+    @functools.wraps(function)  # Important to preserve name because `command` uses it
+    async def wrapper(ctx, add="", contenu=""):
+        if add == "add" :
+            contenu = "> " + contenu 
+            with open("profs.json", "r", encoding="utf-8-sig") as profsFile :
+                phrases = json.load(profsFile)
+                phrases[function.__name__].append(contenu)
+            with open("profs.json", "w", encoding="utf-8-sig") as profsFile :
+                json.dump(phrases, profsFile, indent=4)
+            mess = f"La phrase '{contenu}' a été ajoutée à la commande ${function.__name__} par {ctx.author}"
+            print(mess)
+            return await function(ctx, mess=mess)
+        elif add == "all" :
+            with open("profs.json", "r", encoding="utf-8-sig") as profsFile :
+                phrases = json.load(profsFile)
+            mess = "\n".join(phrases[function.__name__])
+            return await function(ctx, mess=mess)       
+        else :
+            with open("profs.json", "r", encoding="utf-8-sig") as profsFile :
+                phrases = json.load(profsFile)
+            mess = random.sample(phrases[function.__name__], k=1)[0]
+            return await function(ctx, mess=mess)
+    return wrapper
 
-# SERRANO --------------
-@bot.command(help="Quelques phrases typiques 😉")
-async def serrano(ctx):
-    random.seed()                           #initialise la seed
-    lol = ["Considérez les préfixes comme étant corrects",
-            "N'oubliez pas, les distanciels c'est 80% du temps de travail !",
-            "Merci à Emmanuel Desmontils :heartpulse: :heart_eyes:",
-            "On range son portable !",
-            "FAITES PASSER LE PAQUET !!! :rage:",
-            "Ne soyez pas non plus de mauvaise foi !",
-            "UN PAQUET C'EST UNE COPIE",
-            "Ne prenez pas mon stylo sinon on va tous être malade :nauseated_face: ",
-            "Faut être plus précis",
-            "Vous devez compléter le tableau !"
-            ]
-    await ctx.send(lol[random.randint(0,(len(lol)-1))])
+@bot.command()
+@profs
+async def serrano(ctx, add="", mess=""):
+    await ctx.send(mess)
 
-# MEKAOUCHE ------------------
-@bot.command(help="Quelques phrases typiques 😉")
-async def mekaouche(ctx):
-    random.seed()
-    lol = ["Tu vas pas me salir, je vais pas te salir",
-            "Et si on commençait par 30 minutes pour découvrir un nouveau language : Bash. Quoi ? vous avez eu des cours ?",
-            "MAIS REGARDE DANS TON COURS !!",
-            "Regarde dans ton cours..."]
-    await ctx.send(lol[random.randint(0,(len(lol)-1))])
+@bot.command()
+@profs
+async def mekaouche(ctx, add="", mess=""):
+    await ctx.send(mess)
 
+@bot.command()
+@profs
+async def godart(ctx, add="", mess=""):
+    await ctx.send(mess)
 
-# GODART --------------
-@bot.command(help="Quelques phrases typiques 😉")
-async def godart(ctx):
-    random.seed()
-    lol = ["on a réglé le problème en supprimant l'individu",
-    "Dans le cadre d'un management de projet on est plus sur un management de crise total que de management pro-actif",
-    "C’est pas parce que c’est ma réponse que vous devez mettre la mienne"]
-    await ctx.send(lol[random.randint(0,(len(lol)-1))])
+@bot.command()
+@profs
+async def sinoquet(ctx, add="", mess=""):
+    await ctx.send(mess)
 
 # TELETCHEA -----------------
 @bot.command()
@@ -447,13 +467,6 @@ async def teletchea(ctx):
     with open("cartouches.txt","w") as cartouches :
         cartouches.write(str(qte))
     await ctx.send(f'{qte} articles se sont pris une cartouche :gun:')
-
-# SINOQUET ------------------
-@bot.command()
-async def sinoquet(ctx):
-    with open("bot-sinoquet.txt","r") as phrases :
-        phrases = phrases.readlines()
-    await ctx.send(random.sample(phrases, 1)[0].strip())
 
 
 #************* SUPPRESSION DE MESSAGES *****************************************
@@ -697,47 +710,6 @@ async def on_message_delete(message):
             # await message.channel.send("🤫")
 
 
-#********** COMMANDE D'AIDE ****************************************************
-
-@bot.command()
-async def aide(ctx):
-    embed = discord.Embed(title="Aide",
-    description="Comment utiliser les différentes commandes ? \
-        \nLa commande $help joue un rôle similaire, en moins bien \
-        \nUtiliser $help <commande> te permettra (ou pas) d'obtenir des informations plus détaillés sur la commande")
-    embed.add_field(
-        name="$score",
-        value="Mini jeu : le but est de d'entrer un nombre entre 0 et 100 après la commande. \
-        Le bot te dira quel nombre il avait tiré et la différence entre avec ton tirage")
-    embed.add_field(
-        name="$best",
-        value="Renvoie le nom de celui ayant la plus petite différence. Je reset la commande quand quelqu'un a un 0")
-    embed.add_field(
-        name="$serrano, $teletchea, $mekaouche, $godart",
-        value="Juste pour rire :)")
-    embed.add_field(
-        name="$salon",
-        value="Crée un salon et un rôle dont le nom est donné en argument, réservé aux admins")
-    embed.add_field(
-        name="$dels",
-        value="Efface un salon et un rôle. \
-        Il faut mettre le nom du salon en premier argument et le nom du rôle en deuxième argument, réservé aux admins")
-    embed.add_field(
-        name="$mess",
-        value="Te dit combien de messages tu as envoyé pendant que le bot est up")
-    embed.add_field(
-        name="$rank",
-        value="Le classement des gens les plus bavards")
-    embed.add_field(
-        name="$jeux",
-        value="Appelle le bot de jeux s'il n'est pas en ligne\n\
-        Celui-ci permet de jouer à puissance 4 pour l'instant")
-    embed.add_field(
-        name="$silence, $retour",
-        value="$silence permet de masquer la majorité des salons, $retour permet de revenir à la normale")
-    await ctx.send(embed=embed)
-
-
 #************** APPEL DU BOT DE JEUX *******************************************
 @bot.command(help="Appelle le bot de jeux")
 async def jeux(ctx):
@@ -779,6 +751,7 @@ async def on_ready():
     print('Bot connecté')
     drive.download(drive.RANKS)
     drive.download(drive.REACTIONS)
+    drive.download(drive.PROFS)
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Plague Inc."))
     slow_count.start()
 

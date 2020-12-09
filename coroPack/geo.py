@@ -3,6 +3,7 @@
 
 import requests as req
 import pandas as pd
+import numpy as np
 from scipy import stats
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -100,7 +101,7 @@ def mapDepInfection(df):
     map_df = gpd.read_file("coroPack/gis/dep/departements-20140306-100m.shp", encoding="utf-8")
     # correction des problèmes de décodage (foutus accents)
     map_df.nom = map_df.nom.apply(checkIfEnc)
-    print(len(map_df.nom))
+    # print(len(map_df.nom))
 
     # rapprochement des départements d'outre-mer
     guyane = map_df.nom == "Guyane"
@@ -129,7 +130,7 @@ def mapDepInfection(df):
     # création d'une échelle
     vmin = df[1].min()
     vmax = df[1].max()
-    print(vmin, vmax)
+    # print(vmin, vmax)
     sm = plt.cm.ScalarMappable(cmap="Reds", norm=plt.Normalize(vmin=vmin, vmax=vmax))
     # ax.set_facecolor("#d5ffff")
     cbar = fig.colorbar(sm)
@@ -160,11 +161,13 @@ def plotGivenDep(dep:str, days:int=40, floatingMean=15, params=None, d1=None, d2
         nb_jours = range(df.count().jour)
         taux = df.P/pd.to_numeric(list(df.T))
         taux = taux.rolling(window=floatingMean, min_periods=1).mean()
+        if params["log"] :
+            taux = np.log(taux)
         slope, intercept, rvalue, pvalue, stderr = stats.linregress(nb_jours, taux)
 
         fig, ax = plt.subplots()
         ax.plot(df.jour, taux, label="Taux de tests positifs")
-        if rvalue >= 0.9 :
+        if rvalue >= 0.8 :
             ax.plot(nb_jours,
                 nb_jours*slope + intercept,
                 label=f"Pente : {round(slope, 5)} /jour\nrvalue : {round(rvalue, 2)}")
@@ -175,6 +178,54 @@ def plotGivenDep(dep:str, days:int=40, floatingMean=15, params=None, d1=None, d2
         plt.title(f"Evolution des taux de dépistages positifs : {depFromCode(dep)}")
         plt.savefig("fig.jpg")
         return depFromCode(dep), d1, d2
+
+def plotFrance(dep:str, days:int=40, floatingMean=15, params=None, d1=None, d2=None):
+    if params == None :
+        return False
+    else : 
+        # print(params)
+        if d2 == None :
+            d2 = dtt.date.today()
+        if d1 == None :
+            d1 = dtt.timedelta(days=days)
+            d1 = d2 - d1
+        df = loadFromUrl(urlDepistQuot)
+
+        df = setAgeClass(df, "0")
+        df = timeFrame(df, d1, d2)
+        # print(df.shape)
+        df = df.groupby("jour", as_index=False).sum()
+        # print(df.shape)
+        # print(df)
+
+        nb_jours = range(df.count().jour)
+        
+        if params["taux"] :
+            a = df.P
+            b = pd.to_numeric(list(df["T"]))
+            # print(b)
+            # print(a/b)
+            taux = a/b
+        else : taux = df.P
+        if params["moy"] :
+            taux = taux.rolling(window=floatingMean, min_periods=1).mean()
+        if params["log"] :
+            taux = np.log(taux)
+        slope, intercept, rvalue, pvalue, stderr = stats.linregress(nb_jours, taux)
+
+        fig, ax = plt.subplots()
+        ax.plot(df.jour, taux, label="Tests journaliers totaux en France")
+        if rvalue >= 0.9 :
+            ax.plot(nb_jours,
+                nb_jours*slope + intercept,
+                label=f"Pente : {round(slope, 5)} /jour\nrvalue : {round(rvalue, 2)}")
+
+        ax.legend()
+        ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+        ax.yaxis.set_major_locator(plt.MaxNLocator(10))
+        plt.title(f"Evolution des dépistages positifs en France")
+        plt.savefig("fig.jpg")
+        return "France", d1, d2
 
 if __name__ == '__main__':
     df = donnesHosp(days=90, floatingMean= 7)

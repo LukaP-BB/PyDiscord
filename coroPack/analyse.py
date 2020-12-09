@@ -2,6 +2,7 @@
 #-*- coding:utf-8 -*-
 
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import requests as req
@@ -30,7 +31,24 @@ def france(data):
     return data
 
 def plotThat(df, args):
-    plt.style.use('Solarize_Light2')
+    # plt.style.use('Solarize_Light2')
+    if args["diff"] : 
+        # print("Données journalières")
+        df.dc = df.dc.diff()
+        df.rad = df.rad.diff()
+
+    if args["moy"] :
+        df.dc = df.dc.rolling(window=15, min_periods=1).mean()
+        df.rea = df.rea.rolling(window=15, min_periods=1).mean()
+        df.rad = df.rad.rolling(window=15, min_periods=1).mean()
+        df.hosp = df.hosp.rolling(window=15, min_periods=1).mean()
+
+    if args["log"] :
+        df.dc = np.log(df["dc"])
+        df.rea = np.log(df["rea"])
+        df.rad = np.log(df["rad"])
+        df.hosp = np.log(df["hosp"])
+
     fig, ax = plt.subplots()
     if args["hosp"] : ax.plot(df.jour, df.hosp, label="Hospitalisations")
     if args["rea"] : ax.plot(df.jour, df.rea, label="Personnes en réanimation")

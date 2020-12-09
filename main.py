@@ -78,6 +78,17 @@ async def download(ctx):
     await ctx.send("Les fichiers ont été downloadés !")
 
 @bot.command()
+async def simon(ctx) :
+    delta = datetime.date(2021, 8, 1) - datetime.date.today()
+    messages = [
+        f"J-{delta.days} <:monkaS:632528449541505025> 👶",
+        "https://tenor.com/view/baby-butt-gif-15591361",
+        "https://media1.tenor.com/images/41207bf30d6f16c5462085b85b222117/tenor.gif?itemid=16135073",
+        
+    ]
+    await ctx.send(random.sample(messages, 1)[0])
+
+@bot.command()
 async def lulu(ctx, member : discord.Member = None):
     auteur = ctx.message.author
     if member == None and auteur.id != 621748334104805416:
@@ -234,7 +245,14 @@ async def plot(ctx, *args):
             await ctx.send(file=file, embed=embed)
     elif args["type"] == "tests" :
         if args["dep"] == "FR" :
-            await ctx.send("Il faut spécifier un département (pour l'instant)")
+            async with ctx.channel.typing():
+                dep, d1, d2 = geo.plotFrance(dep=args["dep"], params=args, d1=args["d1"], d2=args["d2"])
+                embed = discord.Embed(
+                    title=f"Courbe des dépistages positifs : {dep}",
+                    description=f"Entre le {d1} et le {d2}",
+                    colour=discord.Colour.magenta())
+                embed.set_image(url="attachment://fig.jpg")
+                await ctx.send(file=file, embed=embed)
         else :
             async with ctx.channel.typing():
                 dep, d1, d2 = geo.plotGivenDep(dep=args["dep"], params=args, d1=args["d1"], d2=args["d2"])
@@ -303,7 +321,7 @@ async def m(ctx, chan_id, content):
     else :
         await ctx.send("Fous moi la paix !")
 ############## ANNIVERSAIRES ###################################################
-# d = datetime.date
+
 @bot.command()
 async def anniv(ctx, com="False", amount=3):
     liste_anniversaires = anvs.loadAnnivs()
@@ -317,26 +335,6 @@ async def anniv(ctx, com="False", amount=3):
             user = bot.get_user(key)
             mess_anniv = anvs.sendRandMess(user)
             await ctx.send(random.choice(mess_anniv))
-
-# ------------------------------------------------------
-
-    elif today == datetime.date(2020, 12, 1) :
-        stupid = [
-            f"Hey Covid-19, bon anniversaire !!!",
-            f"Hey Covid-19, bon anniversaire !!!",
-            f"Hey Covid-19, peut-être que, pour le monde, tu n’es qu’une personne, mais pour des personnes tu es tout le monde, bon anniversaire !!!",
-            f"Hey Covid-19, quelques bougies de plus sur le gâteau ne peuvent rien faire d’autre que d’éclairer davantage ton visage, bon anniversaire !!!",
-            f"Hey Covid-19, ce ne sont pas des cheveux blancs. Ce sont les reflets de la sagesse, bon anniversaire !!!",
-            f"Hey Covid-19, nos anniversaires sont des plumes dans l’aile large du temps.",
-            f"Covid-19,C'est l'anniversaire, dans tous les recoins. \nC'est presque tous les ans qu'on a l'anniversaire. \nGrâce à cet anni c'est la joie, c'est pratique. \nC'est au moins un principe à retenir pour faire la frite. \nCette année c'est bien, l'anniversaire tombe à pique!!",
-            f"Covid-19, Joyeux anniversaire rime avec 'reprends du dessert'. Un hasard ? Je ne pense pas !!!",
-            f"Covid-19, On ne peut pas cultiver son potager, mais à 80 ans on est un sacré pote âgé !!!",
-            f"Hey Covid-19, noyeux janniversaire !!!",
-            f"Hey Covid-19, bon anniversaire !!!" 
-            ]
-        await ctx.send(random.sample(stupid, k=1)[0])
-
-# -------------------------------------------------------
 
     elif com == "next" or com == "False" :
         if com == "next" :
@@ -589,6 +587,19 @@ async def reactions(ctx) :
 #Comptage des messages, envoi de messages aléatoire et réaction aux messages ***
 @bot.event
 async def on_message(message):
+    emojiRegex = r"<:\w{1,}:\d{10,18}>"
+    found = re.findall(emojiRegex, message.content)
+    if len(found) > 0 :
+        with open("reactions.json", "r", encoding="utf-8-sig") as reactionF :
+            reactions = json.load(reactionF)
+        for emoji in found :
+            if emoji in reactions.keys() :
+                reactions[emoji] +=1
+            else :
+                reactions[emoji] = 1
+        with open("reactions.json", "w+", encoding="utf-8-sig") as reactionF :
+            json.dump(reactions, reactionF)
+
     if  message.guild is None :
         print(f"Message reçu de {message.author} : {message.content}\n")
 
@@ -654,13 +665,8 @@ async def mess(ctx):
 async def rank(ctx, a="new"):
     if a ==  "new" :
         fileRangs = "rangs.json"
-        jours, heures, minutes, secondes = timeDeltaToStr(datetime.datetime.now()-DATE_HEURE_CONNEXION)
-        infos = f"Messages envoyés depuis la dernière reconnexion du bot il y a {jours} jours, {heures} heures, {minutes} minutes et {secondes} secondes"
-
     elif a == "old":
         fileRangs = "rangs_old.json"
-        infos = "Vieux décompte des messages, c'était l'bon temps"
-    top = 5
     liste_auteurs = []
     with open(fileRangs, "r", encoding="utf-8-sig") as rangs:
         rangsDict = json.load(rangs)
@@ -671,7 +677,6 @@ async def rank(ctx, a="new"):
         sortie = sortie + (f"Top {i} : {auteur} avec {str(rangsDict[auteur])} messages\n")
         i += 1
     embed = discord.Embed(title="Qui spam le plus le salon ?", description=sortie)
-    await ctx.send(infos)
     await ctx.send(embed=embed)
 
 #************ ON AFFICHE LES BOLCHEVIKS ET ON LOG LES MESSAGES SUPPRIMES *******

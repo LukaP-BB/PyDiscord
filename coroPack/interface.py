@@ -139,9 +139,18 @@ def parseArgs(args):
         "d1" : None,
         "d2" : None,
         "err" : [],
+        "moy" : False,
+        "diff" : True,
+        "log" : False
     }
     if "tests" in args :
         params["type"] = "tests"
+        if "taux" in args : params["taux"] = True
+        else : params["taux"] = False
+    
+    if "moyen" in args : params["moy"] = True
+    if "cumul" in args : params["diff"] = False
+    if "log" in args : params["log"] = True
 
     if "dep" in args or "départements" in args :
         params["type"] = "dep"

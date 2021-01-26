@@ -12,7 +12,9 @@ import json             #pour interragir avec des fichiers json
 import os               #pour interragir avec le système, lancer des commandes en bash par exemple
 import subprocess       #même idée
 import functools        #nécessaire au décorateur @profs
-
+import requests
+from io import BytesIO
+import matplotlib.pyplot as plt
 
 from chat import *
 import iCalParser as icp
@@ -25,7 +27,7 @@ intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
 intents.members = True
-bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
+bot = commands.Bot(command_prefix = '!', intents=intents) #création d'une instance de bot
 
 DATE_HEURE_CONNEXION = datetime.datetime.now()
 
@@ -53,9 +55,12 @@ async def quit(ctx):
         await ctx.send("nope")
 
 @bot.command()
-async def uptime(ctx) :
+async def infos(ctx) :
     jours, heures, minutes, secondes = timeDeltaToStr(datetime.datetime.now() -DATE_HEURE_CONNEXION)
-    await ctx.send(f"Bot connecté depuis {jours} jous, {heures} heures et {minutes} minutes.")
+    await ctx.send(f"Bot connecté depuis {jours} jous, {heures} heures et {minutes} minutes.\n\
+Messages en cache : {len(bot.cached_messages)}\n\
+Latence : {round(bot.latency, 4)}\n\
+Utilisateurs vus : {len(bot.users)}")
 
 
 # MISE A JOUR DES FICHIERS DU DRIVE *********************************************
@@ -79,9 +84,9 @@ async def download(ctx):
 
 @bot.command()
 async def simon(ctx) :
-    delta = datetime.date(2021, 8, 1) - datetime.date.today()
+    # delta = datetime.date(2021, 8, 1) - datetime.date.today()
     messages = [
-        f"J-{delta.days} <:monkaS:632528449541505025> 👶",
+        # f"J-{delta.days} <:monkaS:632528449541505025> 👶",
         "https://tenor.com/view/baby-butt-gif-15591361",
         "https://media1.tenor.com/images/41207bf30d6f16c5462085b85b222117/tenor.gif?itemid=16135073",
         
@@ -366,55 +371,6 @@ Utilises `$anniv next <nombre>` pour connaitre les anniversaires à venir"
         )
 
 
-#************* JEU DE HASARD ***************************************************
-
-@bot.command(help="Jeu de hasard")
-async def score(ctx, guess):
-    random.seed()
-    score = random.randint(0,100)
-    delta = abs(score-int(guess))
-    await ctx.send(f'nombre mystère : {resultats}\ndifférence : {delta}')
-
-    today = datetime.date.today()       #2 lignes pour écrire la date d'obtention du score
-    resultats = open("resultats.txt","a")   #ouvre le fichier resultats.txt en mode "append" : chaque écriture se fait à la suite de ce qui est déjà écrit
-    resultats.writelines([str(ctx.message.author), " : " ,str(delta), " : ", str(today),"\n"]) #ecrit le nom d'utilisateur, le score et la date dans chaque nouvelle ligne du .txt
-    resultats.close()   # a priori utile de fermer le fichier une fois écrit pour pouvoir l'ouvrir dans une autre commande
-
-# gestion d'erreurs pour le mini jeu
-@score.error
-async def score_error(ctx, error):
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Il faut mettre un nombre après $score")
-    elif isinstance(error, commands.CommandInvokeError):
-        await ctx.send("$score n'accepte pas les chaines de caractères :rage:")
-    else:
-        await ctx.send("erreur")
-
-# COMMANDE BEST
-@bot.command(help="Cette commande renvoie le nom d'utilisateur ayant eu le meilleur delta par rapport à son guess.\n\
-Les résultats sont rentrés dans un fichier quand $score est appelé, et cette commande lit le fichier qui en résulte.")
-#commande pour extraire celui ayant le meilleur guess, accompagné de la date
-async def best(ctx):
-    with open("resultats.txt", "r") as resultats :
-        min = 101
-        for line in resultats:
-            match = re.search(r'(: )(\d?\d)( :)', line) #chaque expression entre parenthèse correspond à un groupe
-            if match:
-                score_obtenu = match.group(2)          #le group(2) fait référence aux deuxièmes parenthèses du match
-                score_obtenu = int(score_obtenu)
-                if (score_obtenu < min):
-                    min = score_obtenu
-                    match = re.search('[^0-9^#]*', line)
-                    if match:
-                        nom = match.group(0)
-                    match = re.search(r'\d{4}-\d{2}-\d{2}', line)
-                    if match:
-                        date = match.group(0)
-            else:
-                print("il n'y a pas encore de résultat")
-    await ctx.send("{} a obtenu le meilleur delta, à savoir {} le {}".format(nom, min, date))
-
-
 # ************* UNE SERIE DE FLORILEGES DE PHRASES TYPIQUES ********************
 def profs(function):
     @functools.wraps(function)  # Important to preserve name because `command` uses it
@@ -555,12 +511,25 @@ async def on_reaction_add(reaction, user):
             await reaction.message.pin(reason=f"{user}")
         if name == "🔨" :
             await reaction.message.unpin(reason=f"{user}")
+
+    if name == "<:gourmande:654297183503384578>" :
+        await reaction.message.add_reaction("<:coucou:653592333681688586>")
+    if name == "<:coucou:653592333681688586>" :
+        await reaction.message.add_reaction("<:gourmande:654297183503384578>")
+    if name == "<:kekw:636583908334501899>":
+        for react in reaction.message.reactions :
+            if react.emoji.name == "kekw" :
+                if react.count == 5 :
+                    await react.message.channel.send("<:kekw:636583908334501899>")
+
     else :
         with open("reactions.json", "r", encoding="utf-8-sig") as reactionF :
             reactions = json.load(reactionF)
 
         if name in reactions.keys() :
             reactions[name] +=1
+            if reactions[name] == 1500:
+                await reaction.message.channel.send("{emoji} a été utilisé 1500 fois !")
         else :
             reactions[name] = 1
 
@@ -574,19 +543,61 @@ async def on_reaction_remove(reaction, user):
     if reaction.emoji == "📌" :
         await reaction.message.unpin(reason=f"{user}")
 
+def get_emoji_url(emoji) :
+    emojiRegex = r"<:\w{1,}:(\d{10,18})>"
+    id_ = re.search(emojiRegex, emoji).group(1)
+    emoji = bot.get_emoji(int(id_))
+    if emoji is not None :
+        return emoji
+    else :
+        return False
 
 @bot.command()
 async def reactions(ctx) :
     with open("reactions.json", "r", encoding="utf-8-sig") as reactionF :
         reactions = json.load(reactionF)
 
-    reactions = sorted(reactions.items(), key=lambda item: item[1], reverse=True)
+    noms = []
+    qtes = []
+    imgs = []
+    reactions = sorted(reactions.items(),
+                       key=lambda item: item[1], reverse=False)
+    for r in reactions :
+        emoji = get_emoji_url(r[0])
+        if emoji :
+            noms.append(emoji.name)
+            qtes.append(r[1])
+            imgs.append(emoji.url)
+
+    fig, ax = plt.subplots(figsize=(15,15))
+    ax.barh(y=noms, width=qtes)
+    for i, (nom, qte, img) in enumerate(zip(noms, qtes, imgs)) :
+        response = requests.get(img)
+        img = plt.imread(BytesIO(response.content))
+        ax.imshow(
+            img, 
+            extent=[qte - 8, qte - 2, i - 0.9 / 2, i + 0.9 / 2],  
+            zorder=2,
+            aspect='auto'
+            )
+
+    plt.xlim(0, max(qtes) * 1.05)
+    plt.ylim(-0.5, len(noms) - 0.5)
+    plt.tight_layout()
+    plt.savefig("fig.jpg", bbox_inches='tight')
+    print("figure sauvegardée")
+
+
+
+
     reactions = [f"{reaction[1]} : {reaction[0]}" for reaction in reactions]
-    await ctx.send("> **Top des réactions :** \n> \n> " + "\t ".join(reactions))
+    # await ctx.send("> **Top des réactions :** \n> \n> " + "\t ".join(reactions))
 
 #Comptage des messages, envoi de messages aléatoire et réaction aux messages ***
 @bot.event
 async def on_message(message):
+    
+    # partie relative au comptage des emotes utilisées
     emojiRegex = r"<:\w{1,}:\d{10,18}>"
     found = re.findall(emojiRegex, message.content)
     if len(found) > 0 :
@@ -595,15 +606,18 @@ async def on_message(message):
         for emoji in found :
             if emoji in reactions.keys() :
                 reactions[emoji] +=1
+                if reactions[emoji] == 1500 :
+                    await message.channel.send("{emoji} a été utilisé 1500 fois !")
             else :
                 reactions[emoji] = 1
         with open("reactions.json", "w+", encoding="utf-8-sig") as reactionF :
             json.dump(reactions, reactionF)
 
+    # partie relative aux messages privés reçus par le bot
     if  message.guild is None :
         print(f"Message reçu de {message.author} : {message.content}\n")
 
-    #partie comptage ---------
+    #partie comptage des messages 
     elif message.guild.id in [621610918429851649]  :
         auteur=str(message.author)
         try :
@@ -684,6 +698,9 @@ async def rank(ctx, a="new"):
 #en cas de suppression de message
 @bot.event
 async def on_message_delete(message):
+    print(f"""
+Message supprimé de {message.author} : {message.content}
+""")
     if len(message.content) > 2 and not message.author.bot :
         now = datetime.datetime.now()
         now = now - datetime.timedelta(hours=1, seconds=3)
@@ -703,7 +720,7 @@ async def on_message_delete(message):
                 )
             except :
                 print("Something went wrong...")
-        print (f"heure suppression  \t: {now}\nheure log \t: {date_supr}")
+        # print (f"heure suppression  \t: {now}\nheure log \t: {date_supr}")
 
         if now<date_supr :
             embed = discord.Embed(
@@ -754,6 +771,11 @@ async def ping(ctx):
         await ctx.message.add_reaction(random.choice(bot.emojis))
 
 
+@bot.command(hidden=True, administrator=True)
+async def game(ctx, game) :
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name=game))
+
+
 #*************MESSAGE D'ACCUEIL ************************************************
 @bot.event
 async def on_ready():
@@ -769,7 +791,7 @@ async def on_ready():
 def main():
     with open('token.txt', 'r') as token :
         t = token.read()
-        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

@@ -43,7 +43,7 @@ async def react_emoji(message):
     #     await message.add_reaction("<:regrets:672800202461282322>")
 
     #partie réaction à des messages ----------
-    if re.search('fleurs du malt|scierie|bois|boire|bière|berlin|sur mesure|vestiaire|chat noir|la maison|bar |biere|beer', (message.content).lower()):
+    if re.search('fleurs du malt|scierie|bois|boire|bière|berlin|sur mesure|vestiaire|chat noir|la maison|bar |biere|beer|binch', (message.content).lower()):
         await message.add_reaction("🍺")
 
     if re.search('soif', (message.content).lower()) :
@@ -114,6 +114,14 @@ async def react_mess(message):
 
     if re.search("ça m'en touche une...", contenu) and not message.author.bot :
         await message.channel.send("...sans faire bouger l'autre")
+
+    if re.search("<:coucou:653592333681688586>", contenu) :
+        emoji = "<:gourmande:654297183503384578>"
+        await message.add_reaction(emoji)
+
+    if re.search("<:gourmande:654297183503384578>", contenu):
+        emoji = "<:coucou:653592333681688586>"
+        await message.add_reaction(emoji)
 
 # async def discut(message):
 #

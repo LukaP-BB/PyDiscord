@@ -722,19 +722,21 @@ Message supprimé de {message.author} : {message.content}
                 print("Something went wrong...")
         # print (f"heure suppression  \t: {now}\nheure log \t: {date_supr}")
 
-        if now<date_supr :
-            embed = discord.Embed(
-                title="Alerte !",
-                description=(f"{censeur} a supprimé un message de manière inopinée, \
-                    c'est innacceptable ! \nT'es pire qu'un bolchevik {censeur}"))
-            embed.add_field(
-                name=("Voyons ce que contenait ce message victime de despotisme : "),
-                value=(f"{message.content}\nPar : {message.author}"))
-            await message.channel.send(embed=embed)
-        else :
+        try :
+            if now<date_supr :
+                embed = discord.Embed(
+                    title="Alerte !",
+                    description=(f"{censeur} a supprimé un message de manière inopinée, \
+                        c'est innacceptable ! \nT'es pire qu'un bolchevik {censeur}"))
+                embed.add_field(
+                    name=("Voyons ce que contenait ce message victime de despotisme : "),
+                    value=(f"{message.content}\nPar : {message.author}"))
+                await message.channel.send(embed=embed)
+            else :
+                pass
+                # await message.channel.send("🤫")
+        except :
             pass
-            # await message.channel.send("🤫")
-
 
 #************** APPEL DU BOT DE JEUX *******************************************
 @bot.command(help="Appelle le bot de jeux")

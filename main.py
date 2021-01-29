@@ -512,16 +512,6 @@ async def on_reaction_add(reaction, user):
         if name == "🔨" :
             await reaction.message.unpin(reason=f"{user}")
 
-    if name == "<:gourmande:654297183503384578>" :
-        await reaction.message.add_reaction("<:coucou:653592333681688586>")
-    if name == "<:coucou:653592333681688586>" :
-        await reaction.message.add_reaction("<:gourmande:654297183503384578>")
-    if name == "<:kekw:636583908334501899>":
-        for react in reaction.message.reactions :
-            if react.emoji.name == "kekw" :
-                if react.count == 5 :
-                    await react.message.channel.send("<:kekw:636583908334501899>")
-
     else :
         with open("reactions.json", "r", encoding="utf-8-sig") as reactionF :
             reactions = json.load(reactionF)
@@ -536,6 +526,14 @@ async def on_reaction_add(reaction, user):
         with open("reactions.json", "w+", encoding="utf-8-sig") as reactionF :
             json.dump(reactions, reactionF)
     # print(name)
+
+    if name == "<:gourmande:654297183503384578>":
+        await reaction.message.add_reaction("<:coucou:653592333681688586>")
+    if name == "<:coucou:653592333681688586>":
+        await reaction.message.add_reaction("<:gourmande:654297183503384578>")
+    for react in reaction.message.reactions:
+        if react.count == 7:
+            await react.message.channel.send(react)
 
 
 @bot.event
@@ -554,6 +552,7 @@ def get_emoji_url(emoji) :
 
 @bot.command()
 async def reactions(ctx) :
+
     with open("reactions.json", "r", encoding="utf-8-sig") as reactionF :
         reactions = json.load(reactionF)
 
@@ -561,37 +560,40 @@ async def reactions(ctx) :
     qtes = []
     imgs = []
     reactions = sorted(reactions.items(),
-                       key=lambda item: item[1], reverse=False)
-    for r in reactions :
-        emoji = get_emoji_url(r[0])
-        if emoji :
-            noms.append(emoji.name)
-            qtes.append(r[1])
-            imgs.append(emoji.url)
+                    key=lambda item: item[1], reverse=True)
 
-    fig, ax = plt.subplots(figsize=(15,15))
-    ax.barh(y=noms, width=qtes)
-    for i, (nom, qte, img) in enumerate(zip(noms, qtes, imgs)) :
-        response = requests.get(img)
-        img = plt.imread(BytesIO(response.content))
-        ax.imshow(
-            img, 
-            extent=[qte - 8, qte - 2, i - 0.9 / 2, i + 0.9 / 2],  
-            zorder=2,
-            aspect='auto'
-            )
+    # for r in reactions :
+    #     emoji = get_emoji_url(r[0])
+    #     if emoji :
+    #         noms.append(emoji.name)
+    #         qtes.append(r[1])
+    #         imgs.append(emoji.url)
 
-    plt.xlim(0, max(qtes) * 1.05)
-    plt.ylim(-0.5, len(noms) - 0.5)
-    plt.tight_layout()
-    plt.savefig("fig.jpg", bbox_inches='tight')
-    print("figure sauvegardée")
+    # fig, ax = plt.subplots(figsize=(15,15))
+    # ax.barh(y=noms, width=qtes)
+    # for i, (nom, qte, img) in enumerate(zip(noms, qtes, imgs)) :
+    #     response = requests.get(img)
+    #     img = plt.imread(BytesIO(response.content))
+    #     ax.imshow(
+    #         img, 
+    #         extent=[qte - 8, qte - 2, i - 0.9 / 2, i + 0.9 / 2],  
+    #         zorder=2,
+    #         aspect='auto'
+    #         )
 
+    # plt.xlim(0, max(qtes) * 1.05)
+    # plt.ylim(-0.5, len(noms) - 0.5)
+    # plt.tight_layout()
+    # plt.savefig("fig.jpg", bbox_inches='tight')
+    # print("figure sauvegardée")
 
+    # embed = discord.Embed()
+    # embed.set_image(url="attachment://fig.jpg")
+    # await ctx.send(file=discord.File("fig.jpg"), embed=embed)
 
 
     reactions = [f"{reaction[1]} : {reaction[0]}" for reaction in reactions]
-    # await ctx.send("> **Top des réactions :** \n> \n> " + "\t ".join(reactions))
+    await ctx.send("> **Top des réactions :** \n> \n> " + "\t ".join(reactions))
 
 #Comptage des messages, envoi de messages aléatoire et réaction aux messages ***
 @bot.event
@@ -763,6 +765,7 @@ async def on_command_error(ctx, error):
 Serv : {ctx.guild.name}\n\
 Salon : {ctx.channel.mention}")
         print(error)
+        await ctx.send("Quelquechose a chié quelquepart <:sadKek:761179051582291978>")
 
 #commande pour obtenir la latence du bot ***************************************
 @bot.command()

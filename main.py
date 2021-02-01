@@ -519,7 +519,7 @@ async def on_reaction_add(reaction, user):
         if name in reactions.keys() :
             reactions[name] +=1
             if reactions[name] == 1500:
-                await reaction.message.channel.send("{emoji} a été utilisé 1500 fois !")
+                await reaction.message.channel.send(f"{name} a été utilisé 1500 fois !")
         else :
             reactions[name] = 1
 
@@ -609,7 +609,7 @@ async def on_message(message):
             if emoji in reactions.keys() :
                 reactions[emoji] +=1
                 if reactions[emoji] == 1500 :
-                    await message.channel.send("{emoji} a été utilisé 1500 fois !")
+                    await message.channel.send(f"{emoji} a été utilisé 1500 fois !")
             else :
                 reactions[emoji] = 1
         with open("reactions.json", "w+", encoding="utf-8-sig") as reactionF :

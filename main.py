@@ -22,6 +22,7 @@ import coroPack.interface as itf
 import coroPack.geo as geo
 import anniv as anvs
 import driveAPI.driveAPI as drive
+from twitterAPI.twitter import create_links
 
 intents = discord.Intents.default()
 intents.typing = False
@@ -63,13 +64,20 @@ Latence : {round(bot.latency, 4)}\n\
 Utilisateurs vus : {len(bot.users)}")
 
 
-# MISE A JOUR DES FICHIERS DU DRIVE *********************************************
+# MISE A JOUR DES FICHIERS DU DRIVE ET CHECK DE TWITTER *********************************************
 
 @tasks.loop(minutes=5)
 async def slow_count():
     drive.upload(drive.RANKS)
     drive.upload(drive.REACTIONS)
     drive.upload(drive.PROFS)
+
+    links = create_links()
+    if len(links) > 0 :
+        channel = bot.get_channel(752062075341111296)
+        for link in links :
+            await channel.send(f"***Nouveau tweet de {link['user']} *** : \n{link['link']}")
+
     # print(f"Updating files")
 
 @slow_count.after_loop
@@ -92,6 +100,20 @@ async def simon(ctx) :
         
     ]
     await ctx.send(random.sample(messages, 1)[0])
+
+@bot.command()
+async def twitter(ctx, arg="None") :
+    with open("twitterAPI/infos.json") as infos :
+        infos = json.load(infos)
+
+    if arg in ["None", "help", "Help"] :
+        comptes = '\n\t- @'.join(infos['user_ids'])
+        comptes = "\n\t- @" + comptes
+        await ctx.send(f"Le suivi des tweets est maintenant géré par le bot. Toutes les 5 minutes, celui-ci vérifie s'il y en a eu des nouveaux.\n\
+Le cas échéant --> {bot.get_channel(752062075341111296).mention}.\n\
+Les comptes suivis sont : {comptes}.")
+
+
 
 @bot.command()
 async def lulu(ctx, member : discord.Member = None):

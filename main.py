@@ -71,6 +71,7 @@ async def slow_count():
     drive.upload(drive.RANKS)
     drive.upload(drive.REACTIONS)
     drive.upload(drive.PROFS)
+    drive.upload(drive.INFOS)
 
     links = create_links()
     if len(links) > 0 :
@@ -103,7 +104,7 @@ async def simon(ctx) :
 
 @bot.command()
 async def twitter(ctx, arg="None") :
-    with open("twitterAPI/infos.json") as infos :
+    with open("infos.json", "r", encoding="utf-8-sig)") as infos:
         infos = json.load(infos)
 
     if arg in ["None", "help", "Help"] :
@@ -112,6 +113,11 @@ async def twitter(ctx, arg="None") :
         await ctx.send(f"Le suivi des tweets est maintenant géré par le bot. Toutes les 5 minutes, celui-ci vérifie s'il y en a eu des nouveaux.\n\
 Le cas échéant --> {bot.get_channel(752062075341111296).mention}.\n\
 Les comptes suivis sont : {comptes}.")
+    elif arg == "maj" : 
+        links = create_links()
+        if len(links) > 0:
+            for link in links:
+                await ctx.send(f"***Nouveau tweet de {link['user']} *** : \n{link['link']}")
 
 
 
@@ -810,6 +816,7 @@ async def on_ready():
     drive.download(drive.RANKS)
     drive.download(drive.REACTIONS)
     drive.download(drive.PROFS)
+    drive.download(drive.INFOS)
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Plague Inc."))
     slow_count.start()
 

@@ -25,6 +25,11 @@ PROFS = {
     "id" : "1ofJnNU8mmt4v69q3V5igUXcula_aE5h7cm2imenyBZg"
 }
 
+INFOS = {
+    "file": "infos.json",
+    "id": "1nUkYlvdrbZXlz52LEI7zJCgnp_KbzvjF7V6pB4sRnFM"
+}
+
 def connect():
     "Connects the bot to my drive and returns the handler object"
     creds = None

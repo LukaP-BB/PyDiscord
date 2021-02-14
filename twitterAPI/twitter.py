@@ -14,7 +14,7 @@ def connect_to_endpoint(url, headers):
     return response.json()
 
 def create_links() :
-    with open("twitterAPI/infos.json") as infos:
+    with open("infos.json", "r", encoding="utf-8-sig)") as infos:
         infos = json.load(infos)
 
     previous_tweets = infos["tweet_ids"]
@@ -39,7 +39,7 @@ def create_links() :
             previous_tweets.append(tweet["id"])
     
     infos["tweet_ids"] = previous_tweets
-    with open("twitterAPI/infos.json", "w+") as fp :
+    with open("infos.json", "w+") as fp :
         fp.write(json.dumps(infos, indent=2))
     
     return tweets

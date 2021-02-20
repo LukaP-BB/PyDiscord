@@ -12,8 +12,9 @@ import datetime as dtt
 from coroPack.interface import depFromCode
 from coroPack.analyse import timeFrame, loadData
 
-from io import StringIO
+from colors import set_plt
 
+from io import StringIO
 # plt.style.use('Solarize_Light2')
 
 # a dict to format the dataframes
@@ -144,6 +145,7 @@ def setAgeClass(df, age):
     return df
 
 def plotGivenDep(dep:str, days:int=40, floatingMean=15, params=None, d1=None, d2=None):
+    set_plt()
     if params == None :
         return False
     else : 
@@ -180,6 +182,7 @@ def plotGivenDep(dep:str, days:int=40, floatingMean=15, params=None, d1=None, d2
         return depFromCode(dep), d1, d2
 
 def plotFrance(dep:str, days:int=40, floatingMean=15, params=None, d1=None, d2=None):
+    set_plt()
     if params == None :
         return False
     else : 

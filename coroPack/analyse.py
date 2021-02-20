@@ -9,6 +9,8 @@ import requests as req
 from io import StringIO
 import datetime
 
+from colors import set_plt
+
 def timeFrame(data, d1, d2):
     """Returns a subset of the given dataframe (date have to be inside the two given dates)"""
     data = data[data["jour"] >= d1]
@@ -31,6 +33,7 @@ def france(data):
     return data
 
 def plotThat(df, args):
+    set_plt()
     # plt.style.use('Solarize_Light2')
     if args["diff"] : 
         # print("Données journalières")

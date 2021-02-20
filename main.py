@@ -23,12 +23,14 @@ import coroPack.geo as geo
 import anniv as anvs
 import driveAPI.driveAPI as drive
 from twitterAPI.twitter import create_links
+from colors import *
+
 
 intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
 intents.members = True
-bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
+bot = commands.Bot(command_prefix = '!', intents=intents) #création d'une instance de bot
 
 DATE_HEURE_CONNEXION = datetime.datetime.now()
 
@@ -825,7 +827,7 @@ async def on_ready():
 def main():
     with open('token.txt', 'r') as token :
         t = token.read()
-        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

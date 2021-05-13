@@ -30,7 +30,7 @@ intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
 intents.members = True
-bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
+bot = commands.Bot(command_prefix = '!', intents=intents) #création d'une instance de bot
 
 DATE_HEURE_CONNEXION = datetime.datetime.now()
 
@@ -467,7 +467,7 @@ async def clear(ctx, nb_messages : int):
 @clear.error
 async def clear_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send("Tu n'as pas les droits, nameho !")
+        await ctx.send(f"Tu n'as pas les droits {ctx.message.author.mention} <:kekw:636583908334501899>")
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(f"Il faut mettre un nombre après $clear")
     else :
@@ -557,12 +557,12 @@ async def on_reaction_add(reaction, user):
             json.dump(reactions, reactionF)
     # print(name)
 
-    if name == "<:gourmande:654297183503384578>":
+    if name == "<:gourmande:654297183503384578>" and not reaction.message.author.bot :
         await reaction.message.add_reaction("<:coucou:653592333681688586>")
-    if name == "<:coucou:653592333681688586>":
+    if name == "<:coucou:653592333681688586>" and not reaction.message.author.bot :
         await reaction.message.add_reaction("<:gourmande:654297183503384578>")
-    for react in reaction.message.reactions:
-        if react.count == 6 :
+    for react in reaction.message.reactions and not reaction.message.author.bot :
+        if react.count == 7 :
             await react.message.channel.send(react)
 
 
@@ -789,6 +789,14 @@ async def on_command_error(ctx, error):
     # pass
     if isinstance(error, CommandNotFound):
         await ctx.send("Cette commande n'existe pas")
+    elif isinstance(error, commands.MissingPermissions) :
+        pass
+    elif isinstance(error, commands.MissingRequiredArgument) :
+        pass
+    elif isinstance(error, commands.errors.CommandInvokeError) :
+        pass
+    elif isinstance(error, commands.errors.CommandOnCooldown) :
+        pass
     else:
         MYSELF = bot.get_user(404395089389944832)
         await MYSELF.send(f"Une erreur non anticipée est advenue : \n'{error}'\n\
@@ -826,8 +834,8 @@ async def on_ready():
 
 def main():
     with open('token.txt', 'r') as token :
-        t = token.read()
-        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        # t = token.read()
+        t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
         bot.run(t)
 
 if __name__ == '__main__':

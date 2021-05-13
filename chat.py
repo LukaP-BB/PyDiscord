@@ -88,14 +88,14 @@ async def react_mess(message):
     #             ]
     #     await message.channel.send(lol[random.randint(0,(len(lol)-1))])
 
-    if (re.search('tg ', contenu)
-        or re.search('ta gueule', (message.content).lower())
-        or re.search('la ferme', (message.content).lower())
-        or re.search('tais toi|nique ta mère', (message.content).lower())):
+    if (re.search(' tg ', contenu)
+        or re.search(' ta gueule ', (message.content).lower())
+        or re.search(' la ferme ', (message.content).lower())
+        or re.search(' tais toi | nique ta mère ', (message.content).lower())):
         lol = [f"Tu vas vite te calmer ! {message.author.mention}",
                 f"Ça va mal se mettre ! {message.author.mention}",
                 f"Ta maman ne t'as pas appris la politesse ? Gourgandin.e va {message.author.mention}",
-                "Pour toute réclamation quand à mon comportement, le bureau des plaintes est au fond à droite 😉",
+                "Pour toute réclamation quant à mon comportement, le bureau des plaintes est au fond à droite 😉",
                 "Merci de respecter la bienséance et la politesse dans ce salon.",
                 ]
         await message.channel.send(lol[random.randint(0,(len(lol)-1))])

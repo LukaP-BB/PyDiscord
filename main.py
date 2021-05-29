@@ -36,6 +36,7 @@ if len(sys.argv) > 1 :
     if sys.argv[1] == "test" :
         TEST_MODE = True
     else :
+        TEST_MODE = False
         print("utiliser l'argument test")
         sys.exit(1)
 

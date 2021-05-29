@@ -25,12 +25,24 @@ import driveAPI.driveAPI as drive
 from twitterAPI.twitter import create_links
 from colors import *
 
+import sys
 
 intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
 intents.members = True
-bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
+
+if len(sys.argv) > 1 :
+    if sys.argv[1] == "test" :
+        TEST_MODE = True
+    else :
+        print("utiliser l'argument test")
+        sys.exit(1)
+
+if TEST_MODE :
+    bot = commands.Bot(command_prefix = '!', intents=intents)
+else :
+    bot = commands.Bot(command_prefix = '$', intents=intents) #création d'une instance de bot
 
 DATE_HEURE_CONNEXION = datetime.datetime.now()
 
@@ -77,7 +89,10 @@ async def slow_count():
 
     links = create_links()
     if len(links) > 0 :
-        channel = bot.get_channel(752062075341111296)
+        if TEST_MODE :
+            channel = bot.get_channel(759743347245449237)
+        else :
+            channel = bot.get_channel(752062075341111296)
         for link in links :
             await channel.send(f"***Nouveau tweet de {link['user']} *** : \n{link['link']}")
 
@@ -93,16 +108,6 @@ async def download(ctx):
     drive.download(drive.REACTIONS)
     await ctx.send("Les fichiers ont été downloadés !")
 
-@bot.command()
-async def simon(ctx) :
-    # delta = datetime.date(2021, 8, 1) - datetime.date.today()
-    messages = [
-        # f"J-{delta.days} <:monkaS:632528449541505025> 👶",
-        "https://tenor.com/view/baby-butt-gif-15591361",
-        "https://media1.tenor.com/images/41207bf30d6f16c5462085b85b222117/tenor.gif?itemid=16135073",
-        
-    ]
-    await ctx.send(random.sample(messages, 1)[0])
 
 @bot.command()
 async def twitter(ctx, arg="None") :
@@ -114,14 +119,13 @@ async def twitter(ctx, arg="None") :
         comptes = "\n\t- @" + comptes
         await ctx.send(f"Le suivi des tweets est maintenant géré par le bot. Toutes les 5 minutes, celui-ci vérifie s'il y en a eu des nouveaux.\n\
 Le cas échéant --> {bot.get_channel(752062075341111296).mention}.\n\
-Les comptes suivis sont : {comptes}.")
+Les comptes suivis sont : {comptes}.\n\
+Utilise $twitter maj pour mettre à jour")
     elif arg == "maj" : 
         links = create_links()
         if len(links) > 0:
             for link in links:
                 await ctx.send(f"***Nouveau tweet de {link['user']} *** : \n{link['link']}")
-
-
 
 @bot.command()
 async def lulu(ctx, member : discord.Member = None):
@@ -153,7 +157,10 @@ async def on_member_leave(member):
 
 @bot.command()
 async def ban(ctx):
-    await ctx.send(f"T'as cru quoi {ctx.author.mention} ? <:kekw:636583908334501899>")
+    if ctx.author == bot.get_user(404395089389944832) :
+        await ctx.send("<:monkaW:669940546219016193>")
+    else :
+        await ctx.send(f"T'as cru quoi {ctx.author.mention} ? <:kekw:636583908334501899>")
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -166,7 +173,7 @@ async def kick(ctx, user_id, reason=None):
     person = bot.get_user(ID)
     if ID == 404395089389944832 :
         await ctx.author.send(f"Bien essayé {ctx.author.mention} 🤣\nEnvoie un message à {MYSELF.mention}.")
-        await guild.kick(ctx.author.id, reason="On ne kick pas le patron, namého")
+        await guild.kick(ctx.author.id, reason="A joué au plus malin")
     else :
         await guild.kick(person, reason=reason)
         await ctx.send(f"🦀 {ctx.author.mention} a kick {person.mention} 🦀")
@@ -372,27 +379,34 @@ async def anniv(ctx, com="False", amount=3):
             await ctx.send(random.choice(mess_anniv))
 
     elif com == "next" or com == "False" :
+        
         if com == "next" :
             title = "<:youpicquet:685075741259595781>"
         else :
             title = "Pas d'anniversaire aujourd'hui 😢"
+        
         embed = discord.Embed(
                 title=title,
                 colour = discord.Colour.magenta(),
                 description="Voici le(s) anniversaire(s) à venir : ")
         annivsNext = [key for key in liste_anniversaires.keys() if liste_anniversaires[key] > today]
         x = 0
-        while x < int(amount) and x < len(annivsNext)-1 :
-            try :
-                ID = annivsNext[x]
-                personneAgee = bot.get_user(ID)
-                embed.add_field(
-                    name=(personneAgee.display_name),
-                    value=(liste_anniversaires[ID].strftime('%d/%m')))
-            except :
-                print(f"La personne suivante n'est pas détectée : {ID}")
-            x += 1
-        await ctx.send(embed=embed)
+
+        try :
+            while x < int(amount) and x < len(annivsNext)-1 :
+                try :
+                    ID = annivsNext[x]
+                    personneAgee = bot.get_user(ID)
+                    embed.add_field(
+                        name=(personneAgee.display_name),
+                        value=(liste_anniversaires[ID].strftime('%d/%m')))
+                except :
+                    print(f"La personne suivante n'est pas détectée : {ID}")
+                x += 1
+            await ctx.send(embed=embed)
+
+        except :
+            pass
 
     elif com == "help" :
         await ctx.send(
@@ -561,7 +575,7 @@ async def on_reaction_add(reaction, user):
         await reaction.message.add_reaction("<:coucou:653592333681688586>")
     if name == "<:coucou:653592333681688586>" and not reaction.message.author.bot :
         await reaction.message.add_reaction("<:gourmande:654297183503384578>")
-    for react in reaction.message.reactions and not reaction.message.author.bot :
+    for react in reaction.message.reactions :
         if react.count == 7 :
             await react.message.channel.send(react)
 
@@ -834,8 +848,11 @@ async def on_ready():
 
 def main():
     with open('token.txt', 'r') as token :
-        t = token.read()
-        # t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        if TEST_MODE :
+            t = "NjU1NzIzMzk0MDAzNjMyMTI5.XfYP_w.SqH0-3I6CxoKPDlZABwY_Luyzqg"
+        else :
+            t = token.read()
+        
         bot.run(t)
 
 if __name__ == '__main__':

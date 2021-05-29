@@ -40,6 +40,9 @@ if len(sys.argv) > 1 :
         print("utiliser l'argument test")
         sys.exit(1)
 
+else :
+    TEST_MODE = False
+
 if TEST_MODE :
     bot = commands.Bot(command_prefix = '!', intents=intents)
 else :

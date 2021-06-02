@@ -43,6 +43,8 @@ if len(sys.argv) > 1 :
 else :
     TEST_MODE = False
 
+MYSELF = bot.get_user(404395089389944832)
+
 if TEST_MODE :
     bot = commands.Bot(command_prefix = '!', intents=intents)
 else :
@@ -110,6 +112,8 @@ async def after_slow_count():
 async def download(ctx):
     drive.download(drive.RANKS)
     drive.download(drive.REACTIONS)
+    drive.download(drive.PROFS)
+    drive.download(drive.INFOS)
     await ctx.send("Les fichiers ont été downloadés !")
 
 
@@ -131,6 +135,9 @@ Utilise $twitter maj pour mettre à jour")
             for link in links:
                 await ctx.send(f"***Nouveau tweet de {link['user']} *** : \n{link['link']}")
 
+        else :
+            await ctx.send("Pas de nouveau tweet <:sadKek:761179051582291978>")
+
 @bot.command()
 async def lulu(ctx, member : discord.Member = None):
     auteur = ctx.message.author
@@ -144,7 +151,6 @@ async def lulu(ctx, member : discord.Member = None):
 @bot.event
 async def on_member_join(member):
     print(member)
-    MYSELF = bot.get_user(404395089389944832)
     await MYSELF.send(f"{member.mention} a rejoint le serveur **{member.guild}** :D")
     if member.guild.id == 630852721573888061 :
         channel = bot.get_channel(759743347245449237)
@@ -156,7 +162,6 @@ async def on_member_join(member):
 
 @bot.event
 async def on_member_leave(member):
-    MYSELF = bot.get_user(404395089389944832)
     await MYSELF.send(f"{member.mention} a quitté le serveur :(")
 
 @bot.command()
@@ -169,7 +174,6 @@ async def ban(ctx):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def kick(ctx, user_id, reason=None):
-    MYSELF = bot.get_user(404395089389944832)
     ID = re.search(r"\d{17,20}", user_id).group(0)
     print(ID)
     ID = int(ID)
@@ -347,9 +351,6 @@ async def coro_error(ctx, error):
     if isinstance(error, commands.errors.CommandOnCooldown) :
         await ctx.send(f"Minute papillon, laisses moi quelques secondes ! :rage: {ctx.author.mention}")
     else :
-        with open("id.txt", "r") as idtxt :
-            id = int(idtxt.read())
-        MYSELF = bot.get_user(id)
         await MYSELF.send(f"Une erreur non anticipée est advenue : \n'{error}'\n\
 Serv : {ctx.guild.name}\n\
 Salon : {ctx.channel.mention}")
@@ -800,6 +801,49 @@ async def jeux(ctx):
     global p4
     p4 = subprocess.Popen("./p4.py")
 
+#************** GESTION DES OFFRES D'EMPLOI ************************************
+@bot.command(help="Partage une offre d'emploi dans le salon dédié")
+async def offre(ctx, offre, message="") :
+    channel = bot.get_channel(759743347245449237) if TEST_MODE else bot.get_channel(849557761275985931) 
+    await channel.send(
+        "<:youpicquet:685075741259595781> "
+        f"Une super offre partagée par {ctx.author.mention} dans {ctx.channel.mention} : \n"
+        f"{offre}\n{message}"
+    )
+
+#*************** PARSING DE L'HISTORIQUE DES MESSAGES **************************
+
+@bot.command()
+async def fame(ctx) :
+    await ctx.send("Analyse des messages...")
+
+    for channel in bot.get_guild(621610918429851649).channels:
+        # user_reactions = {}
+        all_reactions = {}
+        if str(channel.type) == "text" :
+            await ctx.send(f"Analyse de {channel.mention}")
+
+            async for message in channel.history(limit=50000):
+                if message.author == ctx.message.author :
+
+                    for reaction in message.reactions :
+                        try :
+                            name = reaction.emoji.name
+                            ID = reaction.emoji.id
+                            name = f"<:{name}:{ID}>"
+                        except :
+                            name = reaction.emoji
+                        
+                        if name in all_reactions :
+                            all_reactions[name] += reaction.count
+                        else :
+                            all_reactions[name] = reaction.count
+            await ctx.send(all_reactions)
+            # break
+
+    # all_reactions = json.dumps(all_reactions, indent=2)
+    # print(all_reactions)
+    # await ctx.send("OK")
 
 #************* GESTION GLOBALE DES ERREURS *************************************
 @bot.event
@@ -816,7 +860,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.errors.CommandOnCooldown) :
         pass
     else:
-        MYSELF = bot.get_user(404395089389944832)
+
         await MYSELF.send(f"Une erreur non anticipée est advenue : \n'{error}'\n\
 Serv : {ctx.guild.name}\n\
 Salon : {ctx.channel.mention}")
@@ -837,14 +881,15 @@ async def game(ctx, game) :
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name=game))
 
 
-#*************MESSAGE D'ACCUEIL ************************************************
+#************* AU LANCEMENT DU BOT ************************************************
 @bot.event
 async def on_ready():
     print('Bot connecté')
-    drive.download(drive.RANKS)
-    drive.download(drive.REACTIONS)
-    drive.download(drive.PROFS)
-    drive.download(drive.INFOS)
+    if not TEST_MODE :
+        drive.download(drive.RANKS)
+        drive.download(drive.REACTIONS)
+        drive.download(drive.PROFS)
+        drive.download(drive.INFOS)
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Plague Inc."))
     slow_count.start()
 

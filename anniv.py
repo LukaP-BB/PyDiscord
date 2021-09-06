@@ -27,7 +27,7 @@ def restoreAnnivs():
     568855896525111307 : d(2021, 8, 14), #camille
     621748334104805416 : d(2021, 8, 22), #lucie
     573037185171980299 : d(2021, 9, 7), #marine
-    428257059146825728 : d(2020, 9, 7), #elisa R
+    428257059146825728 : d(2020, 9, 12), #elisa R
     }
     with open("anniv.json", "w+") as annivs :
         json.dump(liste_anniversaires, annivs, default=dateConverter, indent=0)
